@@ -220,7 +220,7 @@ export const InterviewPrepModal: React.FC<InterviewPrepModalProps> = ({
 
   const currentPreset = JOB_ROLE_PRESETS.find((p) => p.id === selectedPresetId) || JOB_ROLE_PRESETS[0];
 
-  // Available Category Sections with Top 50 Question Banks
+  // Available Category Sections with Top 50-100 Question Banks
   const categorySections = [
     'ALL',
     'React & Next.js',
@@ -228,7 +228,7 @@ export const InterviewPrepModal: React.FC<InterviewPrepModalProps> = ({
     'Vue.js & Nuxt',
     'Web Vitals & Performance',
     'Angular & Modern UI',
-    'C#',
+    'C# & .NET',
     'Generative AI',
     'Microsoft Azure IoT',
     'Snowflake',
@@ -242,7 +242,6 @@ export const InterviewPrepModal: React.FC<InterviewPrepModalProps> = ({
     'Languages & Classic VB',
     'Web Frameworks & Legacy',
     'Enterprise Databases',
-    'C# & .NET',
     'T-SQL & Entity Framework',
     'Enterprise System Design',
     'Agile & SCRUM Leadership',
@@ -262,7 +261,7 @@ export const InterviewPrepModal: React.FC<InterviewPrepModalProps> = ({
         ...getTop50QuestionsForCategory('React Native & Mobile', currentPreset.questions),
         ...getTop50QuestionsForCategory('Vue.js & Nuxt', currentPreset.questions),
         ...getTop50QuestionsForCategory('Web Vitals & Performance', currentPreset.questions),
-        ...getTop50QuestionsForCategory('C#', currentPreset.questions),
+        ...getTop50QuestionsForCategory('C# & .NET', currentPreset.questions),
         ...getTop50QuestionsForCategory('Generative AI', currentPreset.questions),
         ...getTop50QuestionsForCategory('Microsoft Azure IoT', currentPreset.questions),
         ...getTop50QuestionsForCategory('Snowflake', currentPreset.questions),
@@ -276,7 +275,6 @@ export const InterviewPrepModal: React.FC<InterviewPrepModalProps> = ({
         ...getTop50QuestionsForCategory('Languages & Classic VB', currentPreset.questions),
         ...getTop50QuestionsForCategory('Web Frameworks & Legacy', currentPreset.questions),
         ...getTop50QuestionsForCategory('Enterprise Databases', currentPreset.questions),
-        ...getTop50QuestionsForCategory('C# & .NET', currentPreset.questions),
         ...getTop50QuestionsForCategory('T-SQL & Entity Framework', currentPreset.questions),
         ...getTop50QuestionsForCategory('Angular & Modern UI', currentPreset.questions),
         ...getTop50QuestionsForCategory('Enterprise System Design', currentPreset.questions),
@@ -695,8 +693,8 @@ ${qResources.map(res => `- [${res.title}](${res.url}) *(${res.source})* — ${re
                   <span className="text-xs">{getCategoryIcon(cat)}</span>
                   <span>{cat}</span>
                   {cat !== 'ALL' && (
-                    <span className="bg-zinc-950/80 text-teal-300 px-1.5 py-0.2 rounded text-[10px] font-mono border border-teal-800/60">
-                      50 Qs
+                    <span className="bg-zinc-950/80 text-teal-300 px-1.5 py-0.5 rounded text-[10px] font-mono border border-teal-800/60">
+                      {getTop50QuestionsForCategory(cat, currentPreset.questions).length} Qs
                     </span>
                   )}
                 </button>

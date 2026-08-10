@@ -1276,10 +1276,8 @@ export function getTop50QuestionsForCategory(categoryName: string, presetQuestio
     pool = TOP_20_GENERATIVE_AI;
   } else if (catLower.includes('azure iot') || catLower.includes('iot hub') || catLower.includes('iot edge') || catLower.includes('microsoft azure iot') || catLower === 'iot') {
     pool = TOP_20_AZURE_IOT;
-  } else if (catLower === 'c#' || catLower === 'csharp') {
+  } else if (catLower === 'c#' || catLower === 'csharp' || catLower === 'c# & .net' || (catLower.includes('.net') && !catLower.includes('angular'))) {
     pool = TOP_20_CSHARP;
-  } else if (catLower === 'c# & .net' || (catLower.includes('.net') && !catLower.includes('angular'))) {
-    pool = TOP_20_CSHARP_NET;
   } else if (catLower.includes('snowflake')) {
     pool = TOP_20_SNOWFLAKE;
   } else if (catLower.includes('node.js') || catLower.includes('nodejs') || catLower === 'node') {
@@ -1389,7 +1387,7 @@ export function getTop50QuestionsForCategory(categoryName: string, presetQuestio
     result = Array.from(uniqueMap.values());
   }
 
-  return result.slice(0, 50); // Return 50 questions per section
+  return result; // Return full question bank (e.g. 50, 100 questions)
 }
 
 // Backward-compatible alias
