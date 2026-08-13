@@ -1,4 +1,4 @@
-import { InterviewQuestion } from '../types';
+import { InterviewQuestion } from './interviewPrepData';
 
 export const TOP_20_REACT_NEXTJS: InterviewQuestion[] = [
   {

@@ -45,6 +45,7 @@ interface ArchitectureSidebarProps {
   
   // Quick launchers
   onOpenFdeAcademy: () => void;
+  onOpenStarterTemplates: () => void;
   onOpenQuiz: () => void;
   onOpenCareerPath: () => void;
   onOpenCostEstimator: () => void;
@@ -73,6 +74,7 @@ export const ArchitectureSidebar: React.FC<ArchitectureSidebarProps> = ({
   onToggleCompareList,
   onOpenComparison,
   onOpenFdeAcademy,
+  onOpenStarterTemplates,
   onOpenQuiz,
   onOpenCareerPath,
   onOpenCostEstimator,
@@ -432,6 +434,15 @@ export const ArchitectureSidebar: React.FC<ArchitectureSidebarProps> = ({
         >
           <Zap className="w-4 h-4 text-cyan-400" />
           <span className="text-[10px] font-bold hidden sm:inline">FDE</span>
+        </button>
+
+        <button
+          onClick={onOpenStarterTemplates}
+          className="p-1.5 hover:bg-blue-950/60 hover:text-blue-300 rounded-lg transition-colors flex items-center gap-1"
+          title="Starter Templates & Skeletons"
+        >
+          <Code2 className="w-4 h-4 text-blue-400" />
+          <span className="text-[10px] font-bold hidden sm:inline">Code</span>
         </button>
 
         <button

@@ -31,7 +31,7 @@ export const ProficiencyRadarChart: React.FC<ProficiencyRadarChartProps> = ({
   const [activeTab, setActiveTab] = useState<'radar' | 'gap-analysis'>('radar');
 
   // Extract unique categories
-  const categories = Array.from(new Set(allQuestions.map((q) => q.category)));
+  const categories: string[] = Array.from(new Set(allQuestions.map((q) => q.category)));
 
   // Calculate scores per category
   const radarData = categories.map((cat) => {

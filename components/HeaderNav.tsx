@@ -40,6 +40,7 @@ interface HeaderNavProps {
   onOpenRoadmap: () => void;
   onOpenComparisonReport: () => void;
   onOpenCostEstimator: () => void;
+  onOpenStarterTemplates: () => void;
   onOpenExportSpec: () => void;
   onOpenInterviewPrep: () => void;
   onOpenCategoryMatrix: () => void;
@@ -72,6 +73,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenRoadmap,
   onOpenComparisonReport,
   onOpenCostEstimator,
+  onOpenStarterTemplates,
   onOpenExportSpec,
   onOpenInterviewPrep,
   onOpenCategoryMatrix,
@@ -303,6 +305,29 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     <div className="text-xs font-bold text-white">Compare Architectures Report</div>
                     <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
                       Side-by-side trade-off matrix, SLA & cost scores.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveDropdown(null);
+                    onOpenStarterTemplates();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-800/80 transition-colors flex items-start gap-2.5 group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-950 border border-blue-700/60 flex items-center justify-center text-blue-300 shrink-0">
+                    <Code2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>Starter Templates & Skeletons</span>
+                      <span className="px-1 py-0.2 rounded bg-blue-900 text-blue-200 text-[9px] font-mono">
+                        Code
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
+                      Project skeleton, CLI setup, directory trees & starter code.
                     </p>
                   </div>
                 </button>
@@ -595,6 +620,12 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               className="p-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-300 flex items-center gap-2"
             >
               <Scale className="w-3.5 h-3.5 text-blue-400" /> Compare Report
+            </button>
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenStarterTemplates(); }}
+              className="p-2 bg-zinc-900 border border-blue-800/60 rounded-xl text-xs text-blue-300 flex items-center gap-2"
+            >
+              <Code2 className="w-3.5 h-3.5 text-blue-400" /> Templates & Skeletons
             </button>
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenCostEstimator(); }}

@@ -262,7 +262,7 @@ export const FdeRoadmapModal: React.FC<FdeRoadmapModalProps> = ({ onClose, onSel
 
   const toggleFlagQuestion = (qId: number) => {
     setFlaggedQuestions(prev =>
-      prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, id]
+      prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]
     );
   };
 

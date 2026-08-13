@@ -1,6 +1,6 @@
 {
   "name": "ArchFiddle - SaaS Architecture Encyclopedia",
-  "description": "A comprehensive interactive guide to SaaS software architectural styles, Forward Deployed Engineering (FDE) curriculum, interactive diagrams, study material, and official certification.",
+  "description": "A comprehensive interactive guide to SaaS software architectural styles, production development starter templates & skeletons, Forward Deployed Engineering (FDE) curriculum, interactive diagrams, study material, and official certification.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

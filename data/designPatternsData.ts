@@ -85,7 +85,7 @@ class OrderQueryHandler {
       'Introduces eventual consistency lag between writes and read views',
       'Increases code complexity and operational infrastructure requirements'
     ],
-    relatedArchTypes: [ArchType.EventDriven, ArchType.Microservices, ArchType.CQRS]
+    relatedArchTypes: [ArchType.EventDriven, ArchType.Microservices, ArchType.SOA]
   },
   {
     id: 'saga',
@@ -222,7 +222,7 @@ class CircuitBreaker {
       'Requires sensible fallback strategies for user experience',
       'Adds state tracking overhead and configuration complexity'
     ],
-    relatedArchTypes: [ArchType.Microservices, ArchType.ServiceMesh, ArchType.Serverless]
+    relatedArchTypes: [ArchType.Microservices, ArchType.ContainerNative, ArchType.Serverless]
   },
   {
     id: 'outbox',
@@ -278,7 +278,7 @@ async function processOutboxQueue() {
     cons: [
       'Consumers must handle duplicate messages (idempotent receiver requirements)'
     ],
-    relatedArchTypes: [ArchType.EventDriven, ArchType.Microservices, ArchType.CQRS]
+    relatedArchTypes: [ArchType.EventDriven, ArchType.Microservices, ArchType.SOA]
   },
   {
     id: 'strategy',
@@ -340,7 +340,7 @@ class PaymentProcessor {
     cons: [
       'Clients must be aware of different strategies to select the correct one'
     ],
-    relatedArchTypes: [ArchType.Monolithic, ArchType.Layered, ArchType.Microfrontends]
+    relatedArchTypes: [ArchType.Monolithic, ArchType.Layered, ArchType.WebOriented]
   },
   {
     id: 'factory',
@@ -396,6 +396,6 @@ class StorageFactory {
     cons: [
       'Requires creating multiple additional class files and interfaces'
     ],
-    relatedArchTypes: [ArchType.Layered, ArchType.CleanArchitecture, ArchType.Hexagonal]
+    relatedArchTypes: [ArchType.Layered, ArchType.Monolithic, ArchType.SOA]
   }
 ];

@@ -18,6 +18,8 @@ import { RoadmapView } from './components/RoadmapView';
 import { CareerPathModal } from './components/CareerPathModal';
 import { ArchitectureComparisonReportModal } from './components/ArchitectureComparisonReportModal';
 import { FdeRoadmapModal } from './components/FdeRoadmapModal';
+import { ArchitectureSkeletonViewer } from './components/ArchitectureSkeletonViewer';
+import { FloatingAiAssistant } from './components/FloatingAiAssistant';
 import { HeaderNav } from './components/HeaderNav';
 import { ArchitectureSidebar } from './components/ArchitectureSidebar';
 import {
@@ -37,7 +39,9 @@ import {
   HelpCircle,
   FolderTree,
   ChevronRight,
-  Database
+  Database,
+  Bot,
+  MessageSquare
 } from 'lucide-react';
 
 const App = () => {
@@ -102,7 +106,9 @@ const App = () => {
   // Career Path Builder Modal State
   const [showCareerPathModal, setShowCareerPathModal] = useState(false);
   const [aiCoachPrompt, setAiCoachPrompt] = useState<string | undefined>(undefined);
-  const [showAICoachModal, setShowAICoachModal] = useState(false);
+
+  // Floating AI Assistant Modal / Popup State
+  const [showAiAssistantModal, setShowAiAssistantModal] = useState(false);
 
   // Architecture Comparison Report Modal State
   const [showComparisonReportModal, setShowComparisonReportModal] = useState(false);
@@ -110,6 +116,9 @@ const App = () => {
 
   // Forward Deployed Engineering (FDE) Academy & Certification State
   const [showFdeAcademy, setShowFdeAcademy] = useState(false);
+
+  // Architecture Development Starter Skeletons Modal State
+  const [showStarterTemplatesModal, setShowStarterTemplatesModal] = useState(false);
 
   // Global Search Query State
   const [searchQuery, setSearchQuery] = useState('');
@@ -179,6 +188,7 @@ const App = () => {
           setShowComparisonReportModal(true);
         }}
         onOpenCostEstimator={() => setShowCostEstimator(true)}
+        onOpenStarterTemplates={() => setShowStarterTemplatesModal(true)}
         onOpenExportSpec={() => setShowExportModal(true)}
         onOpenInterviewPrep={() => setShowInterviewPrep(true)}
         onOpenCategoryMatrix={() => setShowCategoryMatrix(true)}
@@ -226,6 +236,7 @@ const App = () => {
             onOpenComparison={handleOpenComparison}
             
             onOpenFdeAcademy={() => setShowFdeAcademy(true)}
+            onOpenStarterTemplates={() => setShowStarterTemplatesModal(true)}
             onOpenQuiz={() => handleOpenQuiz(selectedArchId, 'all')}
             onOpenCareerPath={() => setShowCareerPathModal(true)}
             onOpenCostEstimator={() => setShowCostEstimator(true)}
@@ -239,10 +250,10 @@ const App = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 h-[calc(100vh-53px)] overflow-y-auto scroll-smooth custom-scrollbar">
-          <div className="max-w-6xl mx-auto p-4 sm:p-6 md:p-10 space-y-8">
+          <div className="w-full max-w-[1650px] mx-auto p-4 sm:p-6 md:p-8 space-y-8">
             
             {/* Header with Breadcrumbs, Category Badge, Favorite Star & Quick Action Toolbar */}
-            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 pb-6 border-b border-zinc-800/80">
+            <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 pb-6 border-b border-zinc-800/80">
               <div className="space-y-3 flex-1">
                 
                 {/* Category Badge, Tag Pills & ID */}
@@ -292,13 +303,31 @@ const App = () => {
                   </p>
                 )}
 
-                <p className="text-base sm:text-lg text-zinc-300 leading-relaxed max-w-3xl">
+                <p className="text-base sm:text-lg text-zinc-300 leading-relaxed max-w-4xl">
                   {selectedArch.coreIdea}
                 </p>
               </div>
 
               {/* Quick Actions Hub Bar */}
               <div className="shrink-0 flex items-center gap-2 self-start flex-wrap">
+                <button
+                  onClick={() => setShowAiAssistantModal(true)}
+                  className="py-2 px-3.5 bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-purple-600/30 hover:from-blue-600/50 hover:to-purple-600/50 border border-blue-500/50 text-blue-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm group"
+                  title="Ask AI Principal Architect about trade-offs & senior system design"
+                >
+                  <Bot className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span>Ask AI Architect</span>
+                </button>
+
+                <button
+                  onClick={() => setShowStarterTemplatesModal(true)}
+                  className="py-2 px-3 bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-cyan-600/20 hover:from-blue-600/40 hover:to-cyan-600/40 border border-blue-500/40 text-blue-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm group"
+                  title="Explore Starter Development Skeletons, CLI Commands & Boilerplates"
+                >
+                  <Code2 className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span>Dev Skeletons</span>
+                </button>
+
                 <button
                   onClick={() => {
                     setComparisonReportPair({ archA: selectedArchId });
@@ -349,219 +378,249 @@ const App = () => {
               </div>
             </div>
 
-            {/* Content Grid (Diagram & Architecture Details + AI Assistant) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Architecture Master Tip Accent Banner (Full Width) */}
+            <div className="bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-900 border border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="p-2 bg-amber-950/80 border border-amber-600/60 rounded-xl text-amber-400 shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                    <span>Principal Architect Master Tip</span>
+                    <span className="text-[10px] font-mono font-normal px-2 py-0.2 rounded bg-amber-950/80 border border-amber-700/60 text-amber-300">
+                      Complexity {est.complexityScore}/10
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-zinc-300 italic leading-relaxed">
+                    "When evaluating {selectedArch.title}, verify whether team cognitive load, domain boundaries, and CI/CD automation can support its operational complexity ({est.complexityScore}/10)."
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setAiCoachPrompt(`What are the key architectural trade-offs, pitfalls, and cognitive load concerns when adopting ${selectedArch.title}?`);
+                  setShowAiAssistantModal(true);
+                }}
+                className="whitespace-nowrap px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 self-end md:self-center shrink-0"
+              >
+                <Bot className="w-3.5 h-3.5" />
+                <span>Ask AI About Pitfalls</span>
+              </button>
+            </div>
+
+            {/* Full Width Modules Container */}
+            <div className="space-y-8">
               
-              {/* Left 2 Columns: Interactive Flow Diagram & Deep Dive Data */}
-              <div className="lg:col-span-2 space-y-8">
-                
-                {/* Diagram Section */}
-                <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-2 shadow-xl">
-                  <div className="bg-zinc-950 rounded-xl p-4 h-[370px] w-full flex flex-col">
-                    <div className="flex items-center justify-between mb-3 px-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                        <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest">
-                          Architecture Flow Diagram
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
-                        Interactive SVG Canvas
+              {/* Diagram Section (Expanded Full Width Canvas) */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-3 shadow-xl">
+                <div className="bg-zinc-950 rounded-xl p-4 sm:p-5 h-[440px] sm:h-[480px] md:h-[520px] w-full flex flex-col">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+                      <h3 className="text-xs sm:text-sm font-bold text-zinc-200 uppercase tracking-widest">
+                        Interactive Architecture Flow Diagram & Micro-Components
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-zinc-900 text-zinc-400 border border-zinc-800">
+                        Interactive SVG Canvas • Zoom & Pan Enabled
                       </span>
                     </div>
-                    <div className="flex-1 w-full relative">
-                      <DiagramRenderer type={selectedArch.id} />
-                    </div>
+                  </div>
+                  <div className="flex-1 w-full relative overflow-hidden">
+                    <DiagramRenderer type={selectedArch.id} />
                   </div>
                 </div>
+              </div>
 
-                {/* Estimation & Planning Section */}
-                <section className="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <span className="w-1.5 h-5 bg-pink-500 rounded-full" />
-                      <span>Estimation & Capacity Planning</span>
-                    </h3>
-                    <button
-                      onClick={() => setShowCostEstimator(true)}
-                      className="px-3 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
-                    >
-                      <DollarSign className="w-3.5 h-3.5" />
-                      <span>Estimate Cost</span>
-                    </button>
+              {/* Estimation & Capacity Planning Section (4-Column Full-Width Grid on Desktop) */}
+              <section className="bg-zinc-900/40 p-5 sm:p-6 rounded-2xl border border-zinc-800/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-5 bg-pink-500 rounded-full" />
+                    <span>Estimation & Capacity Planning</span>
+                  </h3>
+                  <button
+                    onClick={() => setShowCostEstimator(true)}
+                    className="px-3.5 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
+                  >
+                    <DollarSign className="w-3.5 h-3.5" />
+                    <span>Estimate Cloud Cost</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
+                  
+                  {/* Development Speed */}
+                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-zinc-400 uppercase">Dev Speed</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        est.devSpeed === 'Rapid' ? 'bg-green-950 text-green-300 border border-green-800' :
+                        est.devSpeed === 'Moderate' ? 'bg-yellow-950 text-yellow-300 border border-yellow-800' :
+                        'bg-red-950 text-red-300 border border-red-800'
+                      }`}>{est.devSpeed}</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed mt-1">{est.devSpeedDesc}</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-                    
-                    {/* Development Speed */}
-                    <div className="bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800/60 space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-zinc-400 uppercase">Dev Speed</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          est.devSpeed === 'Rapid' ? 'bg-green-950 text-green-300 border border-green-800' :
-                          est.devSpeed === 'Moderate' ? 'bg-yellow-950 text-yellow-300 border border-yellow-800' :
-                          'bg-red-950 text-red-300 border border-red-800'
-                        }`}>{est.devSpeed}</span>
-                      </div>
-                      <p className="text-xs text-zinc-400 leading-relaxed mt-1">{est.devSpeedDesc}</p>
+                  {/* Infrastructure Cost */}
+                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-zinc-400 uppercase">Infra Cost</span>
+                      <span className="text-xs font-bold text-zinc-300">{est.infraCost}</span>
                     </div>
-
-                    {/* Infrastructure Cost */}
-                    <div className="bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800/60 space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-zinc-400 uppercase">Infra Cost</span>
-                        <span className="text-xs font-bold text-zinc-300">{est.infraCost}</span>
-                      </div>
-                      <div className="flex gap-1 my-2">
-                        {['Low', 'Medium', 'High', 'Variable'].map((lvl, idx) => {
-                          const active = lvl === est.infraCost || (est.infraCost === 'Variable' && idx === 3);
-                          return <div key={lvl} className={`h-1.5 flex-1 rounded-full ${active ? 'bg-blue-500' : 'bg-zinc-800'}`}></div>;
-                        })}
-                      </div>
-                      <p className="text-xs text-zinc-400 leading-relaxed">{est.infraCostDesc}</p>
+                    <div className="flex gap-1 my-2">
+                      {['Low', 'Medium', 'High', 'Variable'].map((lvl, idx) => {
+                        const active = lvl === est.infraCost || (est.infraCost === 'Variable' && idx === 3);
+                        return <div key={lvl} className={`h-1.5 flex-1 rounded-full ${active ? 'bg-blue-500' : 'bg-zinc-800'}`}></div>;
+                      })}
                     </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">{est.infraCostDesc}</p>
+                  </div>
 
-                    {/* Team Size */}
-                    <div className="bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800/60 space-y-1">
-                      <span className="text-xs font-bold text-zinc-400 uppercase block">Recommended Team Size</span>
-                      <div className="flex items-center gap-2 text-sm text-zinc-200 font-semibold pt-1">
-                        <Briefcase className="w-4 h-4 text-zinc-500" />
-                        <span>{est.teamSize}</span>
-                      </div>
+                  {/* Team Size */}
+                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                    <span className="text-xs font-bold text-zinc-400 uppercase block">Recommended Team Size</span>
+                    <div className="flex items-center gap-2 text-sm text-zinc-200 font-semibold pt-1">
+                      <Briefcase className="w-4 h-4 text-zinc-500" />
+                      <span>{est.teamSize}</span>
                     </div>
+                  </div>
 
-                    {/* Complexity Score */}
-                    <div className="bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800/60 space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-zinc-400 uppercase">Complexity Score</span>
-                        <span className="text-xs font-bold text-zinc-300 font-mono">{est.complexityScore}/10</span>
-                      </div>
-                      <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden mt-2">
-                        <div 
-                          className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" 
-                          style={{ width: `${est.complexityScore * 10}%` }}
-                        />
-                      </div>
+                  {/* Complexity Score */}
+                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-zinc-400 uppercase">Complexity Score</span>
+                      <span className="text-xs font-bold text-zinc-300 font-mono">{est.complexityScore}/10</span>
                     </div>
+                    <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden mt-2">
+                      <div 
+                        className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" 
+                        style={{ width: `${est.complexityScore * 10}%` }}
+                      />
+                    </div>
+                  </div>
 
+                </div>
+              </section>
+
+              {/* Deep Dive Description */}
+              <section className="space-y-3">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span className="w-1.5 h-5 bg-purple-500 rounded-full" />
+                  <span>Deep Dive Description & Architectural Realities</span>
+                </h3>
+                <div className="text-zinc-300 leading-7 bg-zinc-900/40 p-6 rounded-2xl border border-zinc-800/80 whitespace-pre-line text-sm sm:text-base">
+                  {selectedArch.description}
+                </div>
+              </section>
+
+              {/* Use Cases & Prerequisites (2-Column Grid) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <section className="space-y-2">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-green-500 rounded-full" />
+                    <span>Target Use Cases</span>
+                  </h3>
+                  <div className="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 text-zinc-300 text-sm min-h-[100px] leading-relaxed">
+                    {selectedArch.useCase}
                   </div>
                 </section>
 
-                {/* Deep Dive Content (Description, Use Cases, Prerequisites, Tech Stack, Pros/Cons) */}
-                <div className="space-y-8">
-                  
-                  {/* Detailed Description */}
-                  <section className="space-y-3">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <span className="w-1.5 h-5 bg-purple-500 rounded-full" />
-                      <span>Deep Dive Description & Pitfalls</span>
-                    </h3>
-                    <div className="text-zinc-300 leading-7 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 whitespace-pre-line text-sm sm:text-base">
-                      {selectedArch.description}
-                    </div>
-                  </section>
-
-                  {/* Use Cases & Prerequisites */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <section className="space-y-2">
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span className="w-1.5 h-4 bg-green-500 rounded-full" />
-                        <span>Target Use Cases</span>
-                      </h3>
-                      <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80 text-zinc-300 text-sm min-h-[90px] leading-relaxed">
-                        {selectedArch.useCase}
-                      </div>
-                    </section>
-
-                    <section className="space-y-2">
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
-                        <span>Prerequisites & Foundations</span>
-                      </h3>
-                      <ul className="space-y-2 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80 min-h-[90px]">
-                        {selectedArch.prerequisites.map((req, i) => (
-                          <li key={i} className="flex items-start gap-2 text-zinc-300 text-xs sm:text-sm">
-                            <span className="text-orange-400 font-bold mt-0.5">▹</span> 
-                            <span>{req}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  </div>
-
-                  {/* Technology Stack */}
-                  <section className="space-y-2">
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span className="w-1.5 h-4 bg-blue-500 rounded-full" />
-                      <span>Standard Technology Stack</span>
-                    </h3>
-                    <div className="flex flex-wrap gap-2 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80">
-                      {selectedArch.technologyStack.map((tech, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setSearchQuery(tech)}
-                          className="px-3 py-1.5 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 rounded-lg text-xs font-semibold hover:border-blue-500 transition-colors flex items-center gap-1.5"
-                          title={`Search tech ${tech}`}
-                        >
-                          <span>{tech}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Pros and Cons */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <section className="space-y-2">
-                      <h3 className="text-xs font-bold text-green-400 uppercase tracking-wider flex items-center gap-2">
-                        <span className="p-1 bg-green-500/20 rounded">✓</span>
-                        <span>Architectural Strengths (Pros)</span>
-                      </h3>
-                      <ul className="space-y-2 bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/60">
-                        {selectedArch.pros.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-zinc-300 text-xs sm:text-sm">
-                            <span className="text-green-500 font-bold">✓</span> 
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-
-                    <section className="space-y-2">
-                      <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
-                        <span className="p-1 bg-red-500/20 rounded">✕</span>
-                        <span>Trade-Offs & Challenges (Cons)</span>
-                      </h3>
-                      <ul className="space-y-2 bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/60">
-                        {selectedArch.cons.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-zinc-400 text-xs sm:text-sm">
-                            <span className="text-red-500 font-bold">✕</span> 
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  </div>
-                </div>
-
+                <section className="space-y-2">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                    <span>Prerequisites & Foundations</span>
+                  </h3>
+                  <ul className="space-y-2.5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 min-h-[100px]">
+                    {selectedArch.prerequisites.map((req, i) => (
+                      <li key={i} className="flex items-start gap-2 text-zinc-300 text-xs sm:text-sm">
+                        <span className="text-orange-400 font-bold mt-0.5">▹</span> 
+                        <span>{req}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               </div>
 
-              {/* Right Column: AI Architect Assistant & Pro Tips */}
-              <div className="lg:col-span-1">
-                <div className="sticky top-4 space-y-6">
-                  <ChatAssistant architecture={selectedArch} />
-                  
-                  {/* Pro Tip Box */}
-                  <div className="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 border border-zinc-700/80 p-5 rounded-2xl shadow-lg space-y-2">
-                    <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-                      <Sparkles className="w-4 h-4" />
-                      <span>Architecture Master Tip</span>
-                    </div>
-                    <p className="text-xs text-zinc-300 italic leading-relaxed">
-                      "When evaluating {selectedArch.title}, verify whether team cognitive load and CI/CD automation can support its operational complexity ({est.complexityScore}/10)."
-                    </p>
-                  </div>
+              {/* Technology Stack */}
+              <section className="space-y-3">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-blue-500 rounded-full" />
+                  <span>Standard Technology Stack & Toolchain</span>
+                </h3>
+                <div className="flex flex-wrap gap-2.5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80">
+                  {selectedArch.technologyStack.map((tech, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSearchQuery(tech)}
+                      className="px-3.5 py-2 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 rounded-xl text-xs font-semibold hover:border-blue-500 transition-colors flex items-center gap-1.5 shadow-sm"
+                      title={`Search tech ${tech}`}
+                    >
+                      <span>{tech}</span>
+                    </button>
+                  ))}
                 </div>
+              </section>
+
+              {/* Pros and Cons (2-Column Grid) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <section className="space-y-2">
+                  <h3 className="text-xs font-bold text-green-400 uppercase tracking-wider flex items-center gap-2">
+                    <span className="p-1 bg-green-500/20 rounded">✓</span>
+                    <span>Architectural Strengths (Pros)</span>
+                  </h3>
+                  <ul className="space-y-2.5 bg-zinc-900/30 p-5 rounded-2xl border border-zinc-800/60">
+                    {selectedArch.pros.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-zinc-300 text-xs sm:text-sm">
+                        <span className="text-green-500 font-bold">✓</span> 
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <section className="space-y-2">
+                  <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                    <span className="p-1 bg-red-500/20 rounded">✕</span>
+                    <span>Trade-Offs & Challenges (Cons)</span>
+                  </h3>
+                  <ul className="space-y-2.5 bg-zinc-900/30 p-5 rounded-2xl border border-zinc-800/60">
+                    {selectedArch.cons.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-zinc-400 text-xs sm:text-sm">
+                        <span className="text-red-500 font-bold">✕</span> 
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               </div>
+
+              {/* Architecture Development Starter Skeleton & Code Scaffolding */}
+              <section className="space-y-4 pt-6 border-t border-zinc-800/80">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-5 bg-blue-500 rounded-full" />
+                    <h3 className="text-base font-bold text-white">
+                      Development Starter Templates & Code Skeletons
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setShowStarterTemplatesModal(true)}
+                    className="px-3.5 py-1.5 bg-blue-950/80 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span>Open Full Screen Studio</span>
+                  </button>
+                </div>
+                
+                <ArchitectureSkeletonViewer
+                  archId={selectedArch.id}
+                  onSelectArchitecture={(id) => setSelectedArchId(id)}
+                />
+              </section>
 
             </div>
 
@@ -677,7 +736,7 @@ const App = () => {
           onSelectArchitecture={(id) => setSelectedArchId(id)}
           onAskAICareerCoach={(prompt) => {
             setAiCoachPrompt(prompt);
-            setShowAICoachModal(true);
+            setShowAiAssistantModal(true);
           }}
           onOpenFdeAcademy={() => {
             setShowCareerPathModal(false);
@@ -694,20 +753,6 @@ const App = () => {
         />
       )}
 
-      {/* AI Career Coach Modal Chat */}
-      {showAICoachModal && (
-        <div className="fixed inset-0 z-[60] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
-            <ChatAssistant
-              architecture={selectedArch}
-              initialPrompt={aiCoachPrompt}
-              isModal={true}
-              onClose={() => setShowAICoachModal(false)}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Architecture Comparison Report Modal */}
       {showComparisonReportModal && (
         <ArchitectureComparisonReportModal
@@ -716,10 +761,28 @@ const App = () => {
           onClose={() => setShowComparisonReportModal(false)}
           onAskAI={(prompt) => {
             setAiCoachPrompt(prompt);
-            setShowAICoachModal(true);
+            setShowAiAssistantModal(true);
           }}
         />
       )}
+
+      {/* Architecture Development Starter Skeletons & Code Templates Modal */}
+      {showStarterTemplatesModal && (
+        <ArchitectureSkeletonViewer
+          archId={selectedArchId}
+          isModal={true}
+          onClose={() => setShowStarterTemplatesModal(false)}
+          onSelectArchitecture={(id) => setSelectedArchId(id)}
+        />
+      )}
+
+      {/* Persistent Floating AI Architect Bubble & Expandable Popup */}
+      <FloatingAiAssistant
+        architecture={selectedArch}
+        initialPrompt={aiCoachPrompt}
+        isOpen={showAiAssistantModal}
+        onOpenChange={setShowAiAssistantModal}
+      />
 
     </div>
   );

@@ -59,14 +59,18 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
 
   const getArchEnumFromRelatedName = (name: string): ArchType | null => {
     const lower = name.toLowerCase();
-    if (lower.includes('monolith') && !lower.includes('modular')) return ArchType.Monolithic;
-    if (lower.includes('modular')) return ArchType.ModularMonolith;
+    if (lower.includes('monolith')) return ArchType.Monolithic;
+    if (lower.includes('layered')) return ArchType.Layered;
     if (lower.includes('microservice')) return ArchType.Microservices;
-    if (lower.includes('event')) return ArchType.EventDriven;
+    if (lower.includes('event') || lower.includes('cqrs')) return ArchType.EventDriven;
     if (lower.includes('serverless')) return ArchType.Serverless;
-    if (lower.includes('cqrs')) return ArchType.CQRS;
-    if (lower.includes('service mesh')) return ArchType.ServiceMesh;
-    if (lower.includes('peer')) return ArchType.PeerToPeer;
+    if (lower.includes('container') || lower.includes('service mesh')) return ArchType.ContainerNative;
+    if (lower.includes('gitops')) return ArchType.GitOps;
+    if (lower.includes('reactive')) return ArchType.Reactive;
+    if (lower.includes('space')) return ArchType.SpaceBased;
+    if (lower.includes('edge') || lower.includes('peer')) return ArchType.EdgeComputing;
+    if (lower.includes('mobile')) return ArchType.MobileFirst;
+    if (lower.includes('web') || lower.includes('jamstack')) return ArchType.WebOriented;
     return null;
   };
 

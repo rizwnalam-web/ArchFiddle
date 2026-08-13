@@ -1,6 +1,6 @@
 export interface CodeSnippetItem {
   title: string;
-  language: 'typescript' | 'sql' | 'csharp' | 'html' | 'text' | 'json' | 'xml';
+  language: 'typescript' | 'javascript' | 'sql' | 'csharp' | 'html' | 'text' | 'json' | 'xml';
   code: string;
   description?: string;
 }
@@ -16,7 +16,7 @@ export interface InterviewQuestion {
   id: string;
   category: string;
   question: string;
-  difficulty: 'Mid-Level (3-5 YOE)' | 'Senior (6+ YOE)' | 'Staff / Lead Architect' | 'Principal Architect';
+  difficulty: 'Junior (0-2 YOE)' | 'Mid-Level (3-5 YOE)' | 'Senior (6+ YOE)' | 'Staff / Lead Architect' | 'Principal Architect';
   tags: string[];
   shortSummary: string;
   detailedAnswer: {
