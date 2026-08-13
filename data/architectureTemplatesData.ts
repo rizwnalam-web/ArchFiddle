@@ -621,7 +621,15 @@ public class Application {
             name: 'Program.cs',
             language: 'csharp',
             description: 'ASP.NET Core entry point with DI and modular endpoints',
-            content: `var builder = WebApplication.CreateBuilder(args);
+            content: `using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
+using MediatR;
+using MonolithApp.Core.Users;
+using MonolithApp.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Add Services to the Monolith container
 builder.Services.AddEndpointsApiExplorer();
@@ -648,6 +656,223 @@ app.MapPost("/api/users", async (CreateUserCommand command, ISender mediator) =>
 });
 
 app.Run();`
+          },
+          {
+            path: 'src/MonolithApp.Web/appsettings.json',
+            name: 'appsettings.json',
+            language: 'json',
+            description: 'Application configuration and database connection string',
+            content: `{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database=monolith_db;Username=postgres;Password=secret"
+  }
+}`
+          },
+          {
+            path: 'src/MonolithApp.Core/Users/CreateUserCommand.cs',
+            name: 'CreateUserCommand.cs',
+            language: 'csharp',
+            description: 'MediatR command and request handler for creating users',
+            content: `using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using MonolithApp.Infrastructure;
+
+namespace MonolithApp.Core.Users
+{
+    public record CreateUserCommand(string Email, string FullName, string Role) : IRequest<UserDto>;
+
+    public record UserDto(Guid Id, string Email, string FullName, string Role, DateTime CreatedAt);
+
+    public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserDto>
+    {
+        private readonly AppDbContext _dbContext;
+
+        public CreateUserCommandHandler(AppDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        public async Task<UserDto> Handle(CreateUserCommand request, CancellationToken cancellationToken)
+        {
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = request.Email,
+                FullName = request.FullName,
+                Role = request.Role,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return new UserDto(user.Id, user.Email, user.FullName, user.Role, user.CreatedAt);
+        }
+    }
+}`
+          },
+          {
+            path: 'src/MonolithApp.Core/Users/User.cs',
+            name: 'User.cs',
+            language: 'csharp',
+            description: 'User domain entity with encapsulation',
+            content: `using System;
+
+namespace MonolithApp.Core.Users
+{
+    public class User
+    {
+        public Guid Id { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsActive { get; set; } = true;
+    }
+}`
+          },
+          {
+            path: 'src/MonolithApp.Core/Orders/Order.cs',
+            name: 'Order.cs',
+            language: 'csharp',
+            description: 'Order domain entity representing customer orders',
+            content: `using System;
+
+namespace MonolithApp.Core.Orders
+{
+    public enum OrderStatus
+    {
+        Pending,
+        Paid,
+        Shipped,
+        Cancelled
+    }
+
+    public class Order
+    {
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
+        public decimal TotalAmount { get; set; }
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
+        public DateTime PlacedAt { get; set; } = DateTime.UtcNow;
+    }
+}`
+          },
+          {
+            path: 'src/MonolithApp.Infrastructure/AppDbContext.cs',
+            name: 'AppDbContext.cs',
+            language: 'csharp',
+            description: 'EF Core DbContext mapping domain entities to PostgreSQL tables',
+            content: `using Microsoft.EntityFrameworkCore;
+using MonolithApp.Core.Users;
+using MonolithApp.Core.Orders;
+
+namespace MonolithApp.Infrastructure
+{
+    public class AppDbContext : DbContext
+    {
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<User> Users => Set<User>();
+        public DbSet<Order> Orders => Set<Order>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+            });
+        }
+    }
+}`
+          },
+          {
+            path: 'MonolithApp.sln',
+            name: 'MonolithApp.sln',
+            language: 'text',
+            description: '.NET Solution root descriptor file',
+            content: `Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonolithApp.Web", "src/MonolithApp.Web/MonolithApp.Web.csproj", "{A1111111-1111-1111-1111-111111111111}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonolithApp.Core", "src/MonolithApp.Core/MonolithApp.Core.csproj", "{B2222222-2222-2222-2222-222222222222}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonolithApp.Infrastructure", "src/MonolithApp.Infrastructure/MonolithApp.Infrastructure.csproj", "{C3333333-3333-3333-3333-333333333333}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+EndGlobal`
+          },
+          {
+            path: 'Dockerfile',
+            name: 'Dockerfile',
+            language: 'dockerfile',
+            description: 'Multi-stage Dockerfile for .NET 8 ASP.NET Core',
+            content: `FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+
+COPY MonolithApp.sln ./
+COPY src/MonolithApp.Web/*.csproj src/MonolithApp.Web/
+COPY src/MonolithApp.Core/*.csproj src/MonolithApp.Core/
+COPY src/MonolithApp.Infrastructure/*.csproj src/MonolithApp.Infrastructure/
+RUN dotnet restore
+
+COPY . .
+RUN dotnet publish src/MonolithApp.Web/MonolithApp.Web.csproj -c Release -o /out
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /out .
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "MonolithApp.Web.dll"]`
+          },
+          {
+            path: 'README.md',
+            name: 'README.md',
+            language: 'markdown',
+            description: 'Architecture documentation and instructions',
+            content: `# C# .NET 8 Modular Monolith
+
+This template implements a modular monolith in ASP.NET Core 8 with clean boundary separation:
+
+## Structure
+- **MonolithApp.Web**: HTTP controllers, Minimal APIs, routing, and Swagger UI.
+- **MonolithApp.Core**: Isolated domain models, MediatR commands, handlers, and validation.
+- **MonolithApp.Infrastructure**: EF Core DbContext, PostgreSQL mappings, and repositories.
+
+## Commands
+\`\`\`bash
+dotnet restore
+dotnet ef database update --project src/MonolithApp.Infrastructure
+dotnet run --project src/MonolithApp.Web
+\`\`\`
+`
           }
         ],
         quickStartCommands: [
@@ -1094,25 +1319,345 @@ func (s *UserService) Register(ctx context.Context, email, name string) (*User, 
               name: 'src',
               path: 'src',
               children: [
-                { name: 'CleanLayered.Web', path: 'src/CleanLayered.Web', description: 'Presentation Tier', isFile: false },
-                { name: 'CleanLayered.Application', path: 'src/CleanLayered.Application', description: 'Business Services Tier', isFile: false },
-                { name: 'CleanLayered.Infrastructure', path: 'src/CleanLayered.Infrastructure', description: 'Persistence & External APIs', isFile: false }
+                {
+                  name: 'CleanLayered.Web',
+                  path: 'src/CleanLayered.Web',
+                  description: 'Presentation Tier: Controllers, Middleware, Swagger',
+                  children: [
+                    { name: 'Controllers', path: 'src/CleanLayered.Web/Controllers', children: [
+                      { name: 'OrdersController.cs', path: 'src/CleanLayered.Web/Controllers/OrdersController.cs', isFile: true }
+                    ]},
+                    { name: 'Program.cs', path: 'src/CleanLayered.Web/Program.cs', isFile: true },
+                    { name: 'appsettings.json', path: 'src/CleanLayered.Web/appsettings.json', isFile: true }
+                  ]
+                },
+                {
+                  name: 'CleanLayered.Application',
+                  path: 'src/CleanLayered.Application',
+                  description: 'Application Tier: Services, DTOs, Business Logic',
+                  children: [
+                    { name: 'Services', path: 'src/CleanLayered.Application/Services', children: [
+                      { name: 'IOrderService.cs', path: 'src/CleanLayered.Application/Services/IOrderService.cs', isFile: true },
+                      { name: 'OrderService.cs', path: 'src/CleanLayered.Application/Services/OrderService.cs', isFile: true }
+                    ]},
+                    { name: 'DTOs', path: 'src/CleanLayered.Application/DTOs', children: [
+                      { name: 'OrderDto.cs', path: 'src/CleanLayered.Application/DTOs/OrderDto.cs', isFile: true }
+                    ]}
+                  ]
+                },
+                {
+                  name: 'CleanLayered.Domain',
+                  path: 'src/CleanLayered.Domain',
+                  description: 'Domain Tier: Entities, Domain Exceptions, Interfaces',
+                  children: [
+                    { name: 'Entities', path: 'src/CleanLayered.Domain/Entities', children: [
+                      { name: 'Order.cs', path: 'src/CleanLayered.Domain/Entities/Order.cs', isFile: true }
+                    ]},
+                    { name: 'Repositories', path: 'src/CleanLayered.Domain/Repositories', children: [
+                      { name: 'IOrderRepository.cs', path: 'src/CleanLayered.Domain/Repositories/IOrderRepository.cs', isFile: true }
+                    ]}
+                  ]
+                },
+                {
+                  name: 'CleanLayered.Infrastructure',
+                  path: 'src/CleanLayered.Infrastructure',
+                  description: 'Infrastructure Tier: EF Core, Repositories, Database Context',
+                  children: [
+                    { name: 'Persistence', path: 'src/CleanLayered.Infrastructure/Persistence', children: [
+                      { name: 'ApplicationDbContext.cs', path: 'src/CleanLayered.Infrastructure/Persistence/ApplicationDbContext.cs', isFile: true },
+                      { name: 'OrderRepository.cs', path: 'src/CleanLayered.Infrastructure/Persistence/OrderRepository.cs', isFile: true }
+                    ]}
+                  ]
+                }
               ]
-            }
+            },
+            { name: 'CleanLayered.sln', path: 'CleanLayered.sln', isFile: true },
+            { name: 'Dockerfile', path: 'Dockerfile', isFile: true },
+            { name: 'README.md', path: 'README.md', isFile: true }
           ]
         },
         starterFiles: [
+          {
+            path: 'src/CleanLayered.Web/Controllers/OrdersController.cs',
+            name: 'OrdersController.cs',
+            language: 'csharp',
+            description: 'Presentation tier REST API controller',
+            content: `using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using CleanLayered.Application.Services;
+using CleanLayered.Application.DTOs;
+
+namespace CleanLayered.Web.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class OrdersController : ControllerBase
+    {
+        private readonly IOrderService _orderService;
+
+        public OrdersController(IOrderService orderService)
+        {
+            _orderService = orderService;
+        }
+
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+        {
+            var order = await _orderService.GetOrderByIdAsync(id, ct);
+            if (order == null) return NotFound();
+            return Ok(order);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateOrderRequest request, CancellationToken ct)
+        {
+            var created = await _orderService.CreateOrderAsync(request, ct);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+    }
+}`
+          },
+          {
+            path: 'src/CleanLayered.Web/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'ASP.NET Core Web Host & Dependency Injection composition root',
+            content: `using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
+using CleanLayered.Application.Services;
+using CleanLayered.Domain.Repositories;
+using CleanLayered.Infrastructure.Persistence;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Infrastructure Layer DI
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// Application Layer DI
+builder.Services.AddScoped<IOrderService, OrderService>();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();`
+          },
           {
             path: 'src/CleanLayered.Application/Services/IOrderService.cs',
             name: 'IOrderService.cs',
             language: 'csharp',
             description: 'Business tier interface contract',
-            content: `namespace CleanLayered.Application.Services;
+            content: `using System;
+using System.Threading;
+using System.Threading.Tasks;
+using CleanLayered.Application.DTOs;
 
-public interface IOrderService
+namespace CleanLayered.Application.Services
 {
-    Task<OrderDto> CreateOrderAsync(CreateOrderRequest request, CancellationToken ct = default);
-    Task<OrderDto?> GetOrderByIdAsync(Guid id, CancellationToken ct = default);
+    public interface IOrderService
+    {
+        Task<OrderDto> CreateOrderAsync(CreateOrderRequest request, CancellationToken ct = default);
+        Task<OrderDto?> GetOrderByIdAsync(Guid id, CancellationToken ct = default);
+    }
+}`
+          },
+          {
+            path: 'src/CleanLayered.Application/Services/OrderService.cs',
+            name: 'OrderService.cs',
+            language: 'csharp',
+            description: 'Application tier business logic service coordinating repositories',
+            content: `using System;
+using System.Threading;
+using System.Threading.Tasks;
+using CleanLayered.Application.DTOs;
+using CleanLayered.Domain.Entities;
+using CleanLayered.Domain.Repositories;
+
+namespace CleanLayered.Application.Services
+{
+    public class OrderService : IOrderService
+    {
+        private readonly IOrderRepository _orderRepo;
+
+        public OrderService(IOrderRepository orderRepo)
+        {
+            _orderRepo = orderRepo;
+        }
+
+        public async Task<OrderDto> CreateOrderAsync(CreateOrderRequest request, CancellationToken ct = default)
+        {
+            if (request.TotalAmount <= 0)
+            {
+                throw new ArgumentException("Order amount must be greater than zero.");
+            }
+
+            var order = new Order
+            {
+                Id = Guid.NewGuid(),
+                CustomerId = request.CustomerId,
+                TotalAmount = request.TotalAmount,
+                Status = OrderStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _orderRepo.AddAsync(order, ct);
+
+            return new OrderDto(order.Id, order.CustomerId, order.TotalAmount, order.Status.ToString(), order.CreatedAt);
+        }
+
+        public async Task<OrderDto?> GetOrderByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            var order = await _orderRepo.GetByIdAsync(id, ct);
+            if (order == null) return null;
+
+            return new OrderDto(order.Id, order.CustomerId, order.TotalAmount, order.Status.ToString(), order.CreatedAt);
+        }
+    }
+}`
+          },
+          {
+            path: 'src/CleanLayered.Application/DTOs/OrderDto.cs',
+            name: 'OrderDto.cs',
+            language: 'csharp',
+            description: 'Data Transfer Objects (DTOs) for the application layer boundary',
+            content: `using System;
+
+namespace CleanLayered.Application.DTOs
+{
+    public record CreateOrderRequest(Guid CustomerId, decimal TotalAmount);
+
+    public record OrderDto(Guid Id, Guid CustomerId, decimal TotalAmount, string Status, DateTime CreatedAt);
+}`
+          },
+          {
+            path: 'src/CleanLayered.Domain/Entities/Order.cs',
+            name: 'Order.cs',
+            language: 'csharp',
+            description: 'Enterprise Domain Entity with business state',
+            content: `using System;
+
+namespace CleanLayered.Domain.Entities
+{
+    public enum OrderStatus
+    {
+        Pending,
+        Confirmed,
+        Shipped,
+        Completed,
+        Cancelled
+    }
+
+    public class Order
+    {
+        public Guid Id { get; set; }
+        public Guid CustomerId { get; set; }
+        public decimal TotalAmount { get; set; }
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+}`
+          },
+          {
+            path: 'src/CleanLayered.Domain/Repositories/IOrderRepository.cs',
+            name: 'IOrderRepository.cs',
+            language: 'csharp',
+            description: 'Domain repository abstraction (Dependency Inversion Principle)',
+            content: `using System;
+using System.Threading;
+using System.Threading.Tasks;
+using CleanLayered.Domain.Entities;
+
+namespace CleanLayered.Domain.Repositories
+{
+    public interface IOrderRepository
+    {
+        Task<Order?> GetByIdAsync(Guid id, CancellationToken ct = default);
+        Task AddAsync(Order order, CancellationToken ct = default);
+    }
+}`
+          },
+          {
+            path: 'src/CleanLayered.Infrastructure/Persistence/ApplicationDbContext.cs',
+            name: 'ApplicationDbContext.cs',
+            language: 'csharp',
+            description: 'EF Core DbContext mapping Domain entities to the Database',
+            content: `using Microsoft.EntityFrameworkCore;
+using CleanLayered.Domain.Entities;
+
+namespace CleanLayered.Infrastructure.Persistence
+{
+    public class ApplicationDbContext : DbContext
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Order> Orders => Set<Order>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+            });
+        }
+    }
+}`
+          },
+          {
+            path: 'src/CleanLayered.Infrastructure/Persistence/OrderRepository.cs',
+            name: 'OrderRepository.cs',
+            language: 'csharp',
+            description: 'Concrete implementation of IOrderRepository using EF Core',
+            content: `using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using CleanLayered.Domain.Entities;
+using CleanLayered.Domain.Repositories;
+
+namespace CleanLayered.Infrastructure.Persistence
+{
+    public class OrderRepository : IOrderRepository
+    {
+        private readonly ApplicationDbContext _db;
+
+        public OrderRepository(ApplicationDbContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<Order?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            return await _db.Orders.FirstOrDefaultAsync(o => o.Id == id, ct);
+        }
+
+        public async Task AddAsync(Order order, CancellationToken ct = default)
+        {
+            await _db.Orders.AddAsync(order, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+    }
 }`
           }
         ],

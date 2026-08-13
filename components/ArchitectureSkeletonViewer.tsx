@@ -127,195 +127,580 @@ export const generateBoilerplateForFile = (
   const language = getLanguageFromExtension(filePath);
   const lowerName = fileName.toLowerCase();
   const lowerPath = filePath.toLowerCase();
+  const effectiveLang = techStack.language || language;
 
   let description = `Architecture implementation file for ${fileName}`;
   let content = '';
 
-  if (lowerName.includes('controller')) {
-    description = `HTTP / API routing & request validation controller for ${fileName.replace(/\.controller\..*/, '')}`;
-    if (language === 'typescript' || language === 'javascript') {
+  // ==========================================
+  // C# / .NET ARCHITECTURE GENERATOR
+  // ==========================================
+  if (language === 'csharp' || effectiveLang === 'csharp' || fileName.endsWith('.cs')) {
+    const rawName = fileName.replace(/\.cs$/, '');
+    const cleanClassName = rawName.replace(/[^a-zA-Z0-9]/g, '') || 'AppResource';
+    const namespaceFromPath = filePath
+      .replace(/\/[^/]+$/, '')
+      .replace(/^[./]+/, '')
+      .replace(/\//g, '.') || 'App.Core';
+
+    if (lowerName.includes('controller')) {
+      description = `ASP.NET Core Web API Controller with Dependency Injection`;
+      content = `using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ${namespaceFromPath}
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    [Produces("application/json")]
+    public class ${cleanClassName} : ControllerBase
+    {
+        private readonly ILogger<${cleanClassName}> _logger;
+
+        public ${cleanClassName}(ILogger<${cleanClassName}> logger)
+        {
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Retrieves items with architectural boundary verification
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAll(CancellationToken ct = default)
+        {
+            _logger.LogInformation("Querying resource in {Architecture}", "${archTitle}");
+            return Ok(new 
+            { 
+                success = true, 
+                architecture = "${archTitle}",
+                timestamp = DateTime.UtcNow 
+            });
+        }
+
+        /// <summary>
+        /// Creates a new domain record
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] object payload, CancellationToken ct = default)
+        {
+            var id = Guid.NewGuid();
+            _logger.LogInformation("Created new entity with Id {Id}", id);
+            return CreatedAtAction(nameof(GetAll), new { id }, new { id, status = "Created", payload });
+        }
+    }
+}`;
+    } else if (lowerName.includes('command') || lowerName.includes('handler')) {
+      description = `MediatR Command & In-Process Handler for CQRS Decoupling`;
+      content = `using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ${namespaceFromPath}
+{
+    public record ${cleanClassName}(Guid TargetId, string ActionPayload) : IRequest<${cleanClassName}Result>;
+
+    public record ${cleanClassName}Result(Guid Id, string Status, DateTime ProcessedAt);
+
+    public class ${cleanClassName}Handler : IRequestHandler<${cleanClassName}, ${cleanClassName}Result>
+    {
+        public async Task<${cleanClassName}Result> Handle(${cleanClassName} request, CancellationToken cancellationToken)
+        {
+            // 1. Enforce Domain Boundary Invariants
+            if (request.TargetId == Guid.Empty)
+            {
+                throw new ArgumentException("Target ID cannot be empty.");
+            }
+
+            // 2. Execute transactional business logic
+            await Task.Delay(10, cancellationToken);
+
+            return new ${cleanClassName}Result(
+                request.TargetId, 
+                "SUCCESS", 
+                DateTime.UtcNow
+            );
+        }
+    }
+}`;
+    } else if (lowerName.includes('query')) {
+      description = `MediatR Query representation for high-throughput reads`;
+      content = `using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ${namespaceFromPath}
+{
+    public record ${cleanClassName}(Guid Id) : IRequest<${cleanClassName}Dto?>;
+
+    public record ${cleanClassName}Dto(Guid Id, string Name, DateTime CreatedAt);
+
+    public class ${cleanClassName}Handler : IRequestHandler<${cleanClassName}, ${cleanClassName}Dto?>
+    {
+        public async Task<${cleanClassName}Dto?> Handle(${cleanClassName} request, CancellationToken cancellationToken)
+        {
+            // Execute non-tracking query against database read replica
+            await Task.Delay(5, cancellationToken);
+
+            return new ${cleanClassName}Dto(
+                request.Id,
+                "Sample Resource",
+                DateTime.UtcNow
+            );
+        }
+    }
+}`;
+    } else if (lowerName.includes('dbcontext') || lowerName.includes('context')) {
+      description = `Entity Framework Core Database Context mapping relational models`;
+      content = `using Microsoft.EntityFrameworkCore;
+using System;
+
+namespace ${namespaceFromPath}
+{
+    public class ${cleanClassName} : DbContext
+    {
+        public ${cleanClassName}(DbContextOptions<${cleanClassName}> options) : base(options)
+        {
+        }
+
+        // Add domain Entity DbSets here
+        // public DbSet<Order> Orders => Set<Order>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(${cleanClassName}).Assembly);
+        }
+    }
+}`;
+    } else if (lowerName.includes('repository') || lowerName.includes('repo')) {
+      description = `Persistence abstraction & database query encapsulation`;
+      content = `using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ${namespaceFromPath}
+{
+    public interface I${cleanClassName}
+    {
+        Task<object?> GetByIdAsync(Guid id, CancellationToken ct = default);
+        Task SaveAsync(object entity, CancellationToken ct = default);
+    }
+
+    public class ${cleanClassName} : I${cleanClassName}
+    {
+        public async Task<object?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            await Task.Yield();
+            return new { Id = id, Timestamp = DateTime.UtcNow };
+        }
+
+        public async Task SaveAsync(object entity, CancellationToken ct = default)
+        {
+            await Task.Yield();
+        }
+    }
+}`;
+    } else if (lowerName.includes('service')) {
+      description = `Core domain business logic and transaction boundary`;
+      content = `using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ${namespaceFromPath}
+{
+    public interface I${cleanClassName}
+    {
+        Task<bool> ExecuteActionAsync(Guid id, CancellationToken ct = default);
+    }
+
+    public class ${cleanClassName} : I${cleanClassName}
+    {
+        public async Task<bool> ExecuteActionAsync(Guid id, CancellationToken ct = default)
+        {
+            // 1. Enforce Domain Boundary Rules
+            if (id == Guid.Empty) return false;
+
+            // 2. Perform Business Operation
+            await Task.Delay(10, ct);
+            return true;
+        }
+    }
+}`;
+    } else if (lowerName.includes('dto') || lowerName.includes('request') || lowerName.includes('response')) {
+      description = `Strongly typed C# DTO contracts and response payloads`;
+      content = `using System;
+
+namespace ${namespaceFromPath}
+{
+    public record ${cleanClassName}(
+        Guid Id,
+        string Title,
+        string Status,
+        DateTime CreatedAt
+    );
+}`;
+    } else if (lowerName === 'program.cs') {
+      description = `ASP.NET Core application entry point and DI configuration`;
+      content = `using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add framework services
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Arch = "${archTitle}" }));
+
+app.Run();`;
+    } else {
+      description = `C# Domain Entity & Business Model for ${fileName}`;
+      content = `using System;
+
+namespace ${namespaceFromPath}
+{
+    /// <summary>
+    /// Domain Entity in ${archTitle}
+    /// </summary>
+    public class ${cleanClassName}
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Name { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsActive { get; set; } = true;
+    }
+}`;
+    }
+  }
+
+  // ==========================================
+  // CONFIGURATION & PROJECT FILES
+  // ==========================================
+  else if (lowerName.endsWith('.json')) {
+    if (lowerName.includes('appsettings')) {
+      description = `ASP.NET Core runtime configuration and connection strings`;
+      content = `{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database=app_db;Username=postgres;Password=secret"
+  }
+}`;
+    } else if (lowerName.includes('package.json')) {
+      description = `Node.js project manifest and dependency declarations`;
+      content = JSON.stringify({
+        name: `${archTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}-scaffold`,
+        version: "1.0.0",
+        private: true,
+        scripts: {
+          dev: "tsx watch src/index.ts",
+          build: "tsc",
+          start: "node dist/index.js",
+          test: "vitest run"
+        },
+        dependencies: {
+          express: "^4.19.2",
+          zod: "^3.23.8",
+          dotenv: "^16.4.5"
+        },
+        devDependencies: {
+          typescript: "^5.4.5",
+          tsx: "^4.7.2",
+          "@types/node": "^20.12.7"
+        }
+      }, null, 2);
+    } else {
+      description = `Configuration JSON for ${fileName}`;
+      content = JSON.stringify({
+        architecture: archTitle,
+        techStack: techStack.techName,
+        configured: true,
+        version: "1.0.0"
+      }, null, 2);
+    }
+  } else if (lowerName.endsWith('.sln')) {
+    description = `.NET Solution descriptor file`;
+    content = `Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+EndGlobal`;
+  } else if (lowerName.endsWith('.csproj')) {
+    description = `C# .NET Project Configuration File`;
+    content = `<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+</Project>`;
+  }
+
+  // ==========================================
+  // GO (GOLANG) FILES
+  // ==========================================
+  else if (language === 'go' || effectiveLang === 'go' || fileName.endsWith('.go')) {
+    const pkg = filePath.includes('/') ? filePath.split('/')[filePath.split('/').length - 2] : 'main';
+    description = `Go source file for ${fileName}`;
+    if (lowerName === 'main.go') {
+      content = `package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(\`{"status":"healthy","arch":"${archTitle}"}\`))
+	})
+
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	log.Printf("🚀 Go server running on :%s", port)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Server error: %v", err)
+	}
+}`;
+    } else {
+      content = `package ${pkg}
+
+import (
+	"context"
+	"time"
+)
+
+type DomainModel struct {
+	ID        string    \`json:"id"\`
+	Name      string    \`json:"name"\`
+	CreatedAt time.Time \`json:"created_at"\`
+}
+
+type Service interface {
+	Execute(ctx context.Context, id string) (*DomainModel, error)
+}
+`;
+    }
+  }
+
+  // ==========================================
+  // JAVA FILES
+  // ==========================================
+  else if (language === 'java' || effectiveLang === 'java' || fileName.endsWith('.java')) {
+    const className = fileName.replace(/\.java$/, '');
+    description = `Java Spring Modulith component: ${fileName}`;
+    content = `package com.enterprise.app;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.*;
+import java.time.Instant;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/${className.toLowerCase()}")
+public class ${className} {
+
+    @GetMapping
+    public ResponseData getStatus() {
+        return new ResponseData(UUID.randomUUID().toString(), "ACTIVE", Instant.now());
+    }
+
+    public record ResponseData(String id, String status, Instant timestamp) {}
+}`;
+  }
+
+  // ==========================================
+  // PYTHON FILES
+  // ==========================================
+  else if (language === 'python' || effectiveLang === 'python' || fileName.endsWith('.py')) {
+    description = `Python FastAPI module: ${fileName}`;
+    if (lowerName.includes('router') || lowerName.includes('main')) {
+      content = `from fastapi import FastAPI, APIRouter, HTTPException
+from pydantic import BaseModel
+from datetime import datetime
+import uuid
+
+router = APIRouter(prefix="/api/v1", tags=["Domain"])
+
+class ResourceModel(BaseModel):
+    id: str = str(uuid.uuid4())
+    name: str
+    created_at: datetime = datetime.utcnow()
+
+@router.get("/health")
+async def health_check():
+    return {"status": "healthy", "architecture": "${archTitle}"}
+`;
+    } else {
+      const pyClassName = fileName.replace(/\.py$/, '');
+      const capitalizedPyName = pyClassName.charAt(0).toUpperCase() + pyClassName.slice(1);
+      content = `from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+class ${capitalizedPyName}Entity(BaseModel):
+    id: str
+    name: str
+    is_active: bool = True
+    created_at: datetime = datetime.utcnow()
+`;
+    }
+  }
+
+  // ==========================================
+  // TYPESCRIPT / JAVASCRIPT FILES
+  // ==========================================
+  else if (language === 'typescript' || language === 'javascript' || fileName.endsWith('.ts') || fileName.endsWith('.tsx')) {
+    if (lowerName.includes('controller') || lowerName.includes('router')) {
       const moduleName = fileName.split('.')[0] || 'resource';
+      description = `HTTP / API routing & request validation controller for ${moduleName}`;
       content = `import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-// import { ${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Service } from './${moduleName}.service';
 
 export const ${moduleName}Router = Router();
 
-// Validation Schema
-const Create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Schema = z.object({
+const CreateSchema = z.object({
   name: z.string().min(2),
   tags: z.array(z.string()).optional()
 });
 
-/**
- * GET /api/v1/${moduleName}s
- * List records with pagination and boundary isolation
- */
 ${moduleName}Router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const page = parseInt(req.query.page as string || '1', 10);
-    const limit = Math.min(parseInt(req.query.limit as string || '20', 10), 100);
-
-    // Business service delegation
     res.status(200).json({
       success: true,
+      architecture: '${archTitle}',
       data: [],
-      meta: { page, limit, total: 0 }
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * POST /api/v1/${moduleName}s
- * Create domain record
- */
 ${moduleName}Router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const validated = Create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Schema.parse(req.body);
-    
-    // Dispatch to domain service
+    const validated = CreateSchema.parse(req.body);
     res.status(201).json({
       success: true,
-      message: '${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)} created successfully',
-      data: { id: 'gen_' + Date.now(), ...validated }
+      id: 'rec_' + Math.random().toString(36).substr(2, 9),
+      ...validated
     });
   } catch (error) {
     next(error);
   }
 });`;
-    } else if (language === 'csharp') {
-      const className = fileName.replace(/\.cs$/, '');
-      content = `using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-
-namespace App.Controllers
-{
-    [ApiController]
-    [Route("api/v1/[controller]")]
-    public class ${className} : ControllerBase
-    {
-        private readonly ILogger<${className}> _logger;
-
-        public ${className}(ILogger<${className}> logger)
-        {
-            _logger = logger;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            _logger.LogInformation("Querying domain collection in ${archTitle}");
-            return Ok(new { success = true, timestamp = System.DateTime.UtcNow });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] object payload)
-        {
-            return CreatedAtAction(nameof(GetAll), new { status = "Created", payload });
-        }
-    }
-}`;
-    }
-  } else if (lowerName.includes('service')) {
-    description = `Core domain business logic and transaction boundary for ${fileName}`;
-    if (language === 'typescript' || language === 'javascript') {
+    } else if (lowerName.includes('service')) {
       const baseName = fileName.split('.')[0];
       const PascalName = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+      description = `Core domain business logic and transaction boundary for ${PascalName}`;
       content = `/**
- * Architecture Pattern: ${archTitle}
+ * Architecture: ${archTitle}
  * Domain Business Service: ${PascalName}
  */
-export interface ${PascalName}DTO {
-  id?: string;
-  name: string;
-  metadata?: Record<string, unknown>;
-}
-
 export class ${PascalName}Service {
-  constructor() {}
-
-  async executeDomainAction(dto: ${PascalName}DTO): Promise<{ id: string; status: string }> {
-    // 1. Enforce Domain Boundary Invariants
+  async executeDomainAction(dto: { name: string }): Promise<{ id: string; status: string }> {
     if (!dto.name || dto.name.trim().length === 0) {
-      throw new Error('Validation failed: Entity name is required.');
+      throw new Error('Validation failed: Name is required.');
     }
 
-    // 2. Perform Transactional / Business Logic
     const recordId = 'rec_' + Math.random().toString(36).substr(2, 9);
-
-    // 3. Optional: Emit In-Process Event or Outbox Message
-    // await eventPublisher.publish('${baseName}.updated', { id: recordId });
-
-    return {
-      id: recordId,
-      status: 'PROCESSED'
-    };
+    return { id: recordId, status: 'PROCESSED' };
   }
 
   async findById(id: string) {
-    return { id, found: true, retrievedAt: new Date() };
+    return { id, found: true, timestamp: new Date() };
   }
 }`;
-    }
-  } else if (lowerName.includes('repository') || lowerName.includes('repo')) {
-    description = `Data access layer & persistence abstraction for ${fileName}`;
-    content = `/**
- * Data Access Layer — ${fileName}
- * Encapsulates database queries & prevents leaking SQL/ORM details to business services.
- */
-export class ${fileName.split('.')[0].charAt(0).toUpperCase() + fileName.split('.')[0].slice(1)}Repository {
+    } else if (lowerName.includes('repo')) {
+      description = `Data access layer & persistence abstraction for ${fileName}`;
+      content = `export class ${fileName.split('.')[0].charAt(0).toUpperCase() + fileName.split('.')[0].slice(1)}Repository {
   async findById(id: string) {
-    // Execute query via connection pool or ORM client
     return { id, createdAt: new Date() };
   }
 
-  async save(data: any) {
-    // Isolated transactional write
-    return { ...data, updatedAt: new Date() };
-  }
-
-  async delete(id: string): Promise<boolean> {
-    return true;
+  async save(data: unknown) {
+    return { data, updatedAt: new Date() };
   }
 }`;
-  } else if (lowerName.includes('schema') || lowerName.includes('dto')) {
-    description = `Validation rules, contracts, and type declarations`;
-    content = `import { z } from 'zod';
-
-export const DomainEntitySchema = z.object({
-  id: z.string().uuid().or(z.string()),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
-  isActive: z.boolean().default(true)
-});
-
-export type DomainEntityType = z.infer<typeof DomainEntitySchema>;`;
-  } else if (lowerName.includes('prisma')) {
-    description = `Prisma ORM schema definitions and database relational models`;
-    content = `datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    } else {
+      description = `TypeScript module for ${fileName}`;
+      content = `/**
+ * ${archTitle}
+ * Module: ${fileName}
+ */
+export interface ${fileName.replace(/[^a-zA-Z0-9]/g, '')}Contract {
+  id: string;
+  initialized: boolean;
+  timestamp: string;
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
+export const ${fileName.replace(/[^a-zA-Z0-9]/g, '_')} = {
+  initialized: true,
+  path: "${filePath}",
+  createdAt: new Date().toISOString()
+};`;
+    }
+  }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("MEMBER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([email])
-}`;
-  } else if (lowerName.includes('docker') || lowerPath.includes('dockerfile')) {
+  // ==========================================
+  // INFRASTRUCTURE / DOCKER / README
+  // ==========================================
+  else if (lowerName.includes('docker') || lowerPath.includes('dockerfile')) {
     description = `Container configuration & multi-stage optimized runtime build`;
-    content = `# Multi-stage secure build
+    content = `# Multi-stage secure build for ${archTitle}
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
@@ -326,11 +711,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
-USER appuser
 EXPOSE 3000
 CMD ["node", "dist/server.js"]`;
   } else if (lowerName.includes('readme')) {
@@ -344,11 +727,7 @@ CMD ["node", "dist/server.js"]`;
 
 ## Quick Start
 \`\`\`bash
-# 1. Install dependencies
-npm install
-
-# 2. Run local development server
-npm run dev
+${techStack.quickStartCommands.map(c => `# ${c.label}\n${c.command}`).join('\n\n')}
 \`\`\`
 
 ## Architecture Boundary Rules
@@ -357,40 +736,14 @@ ${techStack.architectureRules.map(r => `- ${r}`).join('\n')}
   } else if (lowerName.includes('.env')) {
     description = `Environment configuration keys and sample values`;
     content = techStack.envVariables.map(e => `# ${e.description}\n${e.key}=${e.defaultValue}`).join('\n\n');
-  } else if (lowerName.includes('package.json')) {
-    description = `NPM project manifest and build toolchain scripts`;
-    content = JSON.stringify({
-      name: `${archTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}-scaffold`,
-      version: "1.0.0",
-      private: true,
-      scripts: {
-        dev: "tsx watch src/index.ts",
-        build: "tsc",
-        start: "node dist/index.js",
-        test: "vitest run"
-      },
-      dependencies: {
-        express: "^4.19.2",
-        zod: "^3.23.8",
-        dotenv: "^16.4.5"
-      },
-      devDependencies: {
-        typescript: "^5.4.5",
-        tsx: "^4.7.2",
-        "@types/node": "^20.12.7"
-      }
-    }, null, 2);
   } else {
     description = `Source file for ${fileName}`;
     content = `// Architecture: ${archTitle}
 // File: ${filePath}
 // Tech Stack: ${techStack.techName}
 
-export const ${fileName.replace(/[^a-zA-Z0-9]/g, '_')} = {
-  initialized: true,
-  path: "${filePath}",
-  createdAt: new Date().toISOString()
-};`;
+// Initialized resource file.
+`;
   }
 
   return {
@@ -476,6 +829,35 @@ export const ArchitectureSkeletonViewer: React.FC<ArchitectureSkeletonViewerProp
   // Search filter for file explorer
   const [searchFilter, setSearchFilter] = useState('');
 
+  // Number of matching files for searchFilter
+  const matchingFilesCount = useMemo(() => {
+    if (!searchFilter.trim()) return allTreeFiles.length;
+    const q = searchFilter.toLowerCase().trim();
+    return allTreeFiles.filter(f => f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q)).length;
+  }, [allTreeFiles, searchFilter]);
+
+  // Helper to highlight matching text query in file and folder names
+  const highlightMatch = (text: string, query: string) => {
+    if (!query || !query.trim()) return text;
+    const q = query.trim();
+    const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+    if (parts.length <= 1) return text;
+
+    return (
+      <span>
+        {parts.map((part, i) =>
+          part.toLowerCase() === q.toLowerCase() ? (
+            <mark key={i} className="bg-amber-400/30 text-amber-200 rounded px-0.5 font-semibold">
+              {part}
+            </mark>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </span>
+    );
+  };
+
   // Expand/collapse folders state
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 
@@ -517,19 +899,39 @@ export const ArchitectureSkeletonViewer: React.FC<ArchitectureSkeletonViewerProp
 
   // Robust activeFile resolution: exact starter file OR dynamic architectural boilerplate
   const activeFile: TemplateFile = useMemo(() => {
-    if (!selectedFilePath && activeTechStack.starterFiles[0]) {
-      return activeTechStack.starterFiles[0];
+    const normalizePath = (p: string) => (p || '').trim().replace(/\\/g, '/').replace(/^\/+/, '');
+    const targetPath = normalizePath(selectedFilePath);
+
+    // If no path is selected, default to the first starter file or the first tree file
+    if (!targetPath) {
+      if (activeTechStack.starterFiles && activeTechStack.starterFiles.length > 0) {
+        return activeTechStack.starterFiles[0];
+      }
+      if (allTreeFiles.length > 0) {
+        const firstFile = allTreeFiles[0];
+        return generateBoilerplateForFile(firstFile.path, firstFile.name, activeTechStack, templateCollection.archTitle);
+      }
     }
-    
-    // 1. Search in explicit starterFiles
-    const explicit = activeTechStack.starterFiles.find(f => f.path === selectedFilePath || f.name === selectedFilePath);
+
+    // 1. Search in explicit starterFiles with normalized path and name comparison
+    const explicit = activeTechStack.starterFiles.find(f => {
+      const p = normalizePath(f.path);
+      const n = normalizePath(f.name);
+      return p === targetPath || n === targetPath || (targetPath && (p.endsWith(targetPath) || targetPath.endsWith(p)));
+    });
     if (explicit) return explicit;
 
     // 2. Search in allTreeFiles and generate dynamic boilerplate
-    const matchedNode = allTreeFiles.find(f => f.path === selectedFilePath);
-    const fileName = matchedNode?.name || selectedFilePath.split('/').pop() || 'index.ts';
+    const matchedNode = allTreeFiles.find(f => {
+      const p = normalizePath(f.path);
+      const n = normalizePath(f.name);
+      return p === targetPath || n === targetPath || (targetPath && (p.endsWith(targetPath) || targetPath.endsWith(p)));
+    });
+
+    const resolvedPath = matchedNode?.path || selectedFilePath;
+    const fileName = matchedNode?.name || resolvedPath.split('/').pop() || resolvedPath.split('\\').pop() || 'Program.cs';
     
-    return generateBoilerplateForFile(selectedFilePath || fileName, fileName, activeTechStack, templateCollection.archTitle);
+    return generateBoilerplateForFile(resolvedPath, fileName, activeTechStack, templateCollection.archTitle);
   }, [activeTechStack, selectedFilePath, allTreeFiles, templateCollection.archTitle]);
 
   // Copy states
@@ -679,7 +1081,9 @@ export const ArchitectureSkeletonViewer: React.FC<ArchitectureSkeletonViewerProp
           title={node.path}
         >
           <FileCode className={`w-3.5 h-3.5 shrink-0 transition-colors ${isSelected ? 'text-blue-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-          <span className="truncate flex-1 font-mono text-[11px]">{node.name}</span>
+          <span className="truncate flex-1 font-mono text-[11px]">
+            {searchFilter ? highlightMatch(node.name, searchFilter) : node.name}
+          </span>
           
           {isExplicitStarter && (
             <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 border border-blue-800/60 hidden sm:inline">
@@ -711,7 +1115,9 @@ export const ArchitectureSkeletonViewer: React.FC<ArchitectureSkeletonViewerProp
             ) : (
               <Folder className="w-3.5 h-3.5 text-amber-500/80 shrink-0" />
             )}
-            <span className="truncate font-medium">{node.name}</span>
+            <span className="truncate font-medium">
+              {searchFilter ? highlightMatch(node.name, searchFilter) : node.name}
+            </span>
             {node.description && (
               <span className="text-[10px] text-zinc-500 font-normal ml-auto truncate max-w-[100px] hidden sm:inline">
                 {node.description}
@@ -965,33 +1371,107 @@ export const ArchitectureSkeletonViewer: React.FC<ArchitectureSkeletonViewerProp
             </div>
 
             {/* Quick File Search Input */}
-            <div className="relative mb-2">
-              <Search className="w-3 h-3 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
-                placeholder="Search files (e.g. controller, service, prisma)..."
-                className="w-full bg-zinc-950/80 border border-zinc-800/80 rounded-lg pl-7 pr-7 py-1 text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-blue-500 font-mono"
-              />
-              {searchFilter && (
-                <button
-                  type="button"
-                  onClick={() => setSearchFilter('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+            <div className="space-y-1.5 mb-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setSearchFilter('');
+                  }}
+                  placeholder="Filter files by name, layer, or extension..."
+                  className="w-full bg-zinc-950/90 border border-zinc-800 rounded-lg pl-8 pr-16 py-1.5 text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 font-mono transition-all"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {searchFilter ? (
+                    <>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-300 font-mono font-semibold border border-blue-700/50">
+                        {matchingFilesCount}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSearchFilter('')}
+                        className="text-zinc-400 hover:text-zinc-200 p-0.5 rounded hover:bg-zinc-800 transition-colors"
+                        title="Clear search (Esc)"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-[9px] text-zinc-500 font-mono hidden sm:inline px-1 py-0.5 rounded bg-zinc-900 border border-zinc-800">
+                      Esc
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Filter Tag Suggestions */}
+              {!searchFilter && (
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 text-[10px]">
+                  <span className="text-zinc-500 text-[10px] font-medium shrink-0 flex items-center gap-0.5">
+                    <Filter className="w-2.5 h-2.5" />
+                    <span>Quick:</span>
+                  </span>
+                  {(activeTechStack.language === 'csharp'
+                    ? ['Controller', 'Command', 'DbContext', 'Entity', '.cs']
+                    : activeTechStack.language === 'go'
+                    ? ['main.go', 'handler', 'service', 'model', '.go']
+                    : activeTechStack.language === 'java'
+                    ? ['Controller', 'Service', 'Repository', '.java']
+                    : ['controller', 'service', 'repo', 'schema', 'docker']
+                  ).map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setSearchFilter(tag)}
+                      className="px-1.5 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 font-mono transition-colors shrink-0 cursor-pointer"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
             {/* Tree Scrollable Container */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-0.5">
-              {renderTreeNode(activeTechStack.fileTree)}
+              {matchingFilesCount === 0 && searchFilter ? (
+                <div className="py-10 px-3 text-center space-y-2.5 my-auto">
+                  <div className="w-8 h-8 rounded-full bg-zinc-800/80 text-zinc-400 flex items-center justify-center mx-auto border border-zinc-700/50">
+                    <Search className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-300 font-semibold">No matching files found</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      No files or folders matching <span className="text-zinc-300 font-mono font-medium">"{searchFilter}"</span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSearchFilter('')}
+                    className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg border border-zinc-700 font-medium transition-colors cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                    <span>Clear Search</span>
+                  </button>
+                </div>
+              ) : (
+                renderTreeNode(activeTechStack.fileTree)
+              )}
             </div>
 
             <div className="pt-2 mt-2 border-t border-zinc-800/80 text-[11px] text-zinc-400 flex items-center justify-between">
-              <span className="font-mono">{allTreeFiles.length} files in architecture</span>
+              <span className="font-mono">
+                {searchFilter ? (
+                  <span className="text-blue-300 font-semibold">
+                    {matchingFilesCount} of {allTreeFiles.length} files
+                  </span>
+                ) : (
+                  <span>{allTreeFiles.length} files in architecture</span>
+                )}
+              </span>
               <span className="text-blue-400 font-medium text-[10px] bg-blue-950/60 px-2 py-0.5 rounded border border-blue-900/50">
                 Click any file to view
               </span>
