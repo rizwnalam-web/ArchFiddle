@@ -28,9 +28,14 @@ import {
   Activity,
   BarChart3,
   Sliders,
-  ExternalLink
+  ExternalLink,
+  Headphones,
+  Volume2,
+  Play,
+  Pause
 } from 'lucide-react';
 import { ArchType, ArchCategory } from '../types';
+import { useAudioNarration } from '../src/context/AudioNarrationContext';
 
 interface HeaderNavProps {
   // Navigation trigger callbacks
@@ -99,6 +104,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   const [activeDropdown, setActiveDropdown] = useState<'academy' | 'tools' | 'deepdives' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
+
+  const { state: audioState, togglePlayPause, isSupported: isTtsSupported } = useAudioNarration();
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -582,6 +589,28 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               </span>
             )}
           </button>
+
+          {/* Audio Narration Active Status / Quick Trigger */}
+          {isTtsSupported && (audioState.isPlaying || audioState.isPaused || audioState.currentTrack) && (
+            <button
+              onClick={togglePlayPause}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+                audioState.isPlaying && !audioState.isPaused
+                  ? 'bg-blue-950/80 border-blue-500 text-blue-300 shadow-md shadow-blue-950/50 animate-pulse ring-1 ring-blue-500/40'
+                  : 'bg-zinc-900/90 border-zinc-800 text-zinc-400 hover:text-white'
+              }`}
+              title={audioState.isPlaying && !audioState.isPaused ? "Audio Narration Playing (Click to Pause)" : "Audio Narration Paused (Click to Resume)"}
+            >
+              {audioState.isPlaying && !audioState.isPaused ? (
+                <Pause className="w-3.5 h-3.5 text-blue-400 fill-current" />
+              ) : (
+                <Headphones className="w-3.5 h-3.5 text-zinc-400" />
+              )}
+              <span className="hidden xl:inline truncate max-w-[110px]">
+                {audioState.currentTrack?.title || 'Audio'}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Mobile / Tablet Menu Button */}

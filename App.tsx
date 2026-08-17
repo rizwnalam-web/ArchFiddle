@@ -24,6 +24,9 @@ import { ArchitectureDeepDiveSection } from './components/ArchitectureDeepDiveSe
 import { FloatingAiAssistant } from './components/FloatingAiAssistant';
 import { HeaderNav } from './components/HeaderNav';
 import { ArchitectureSidebar } from './components/ArchitectureSidebar';
+import { AudioNarrationProvider, useAudioNarration } from './src/context/AudioNarrationContext';
+import { AudioNarrationPlayer } from './components/AudioNarrationPlayer';
+import { AudioScriptModal } from './components/AudioScriptModal';
 import {
   Star,
   Scale,
@@ -43,12 +46,39 @@ import {
   ChevronRight,
   Database,
   Bot,
-  MessageSquare
+  MessageSquare,
+  Headphones,
+  Volume2,
+  Play,
+  Pause,
+  Sliders,
+  ChevronDown,
+  BookOpen
 } from 'lucide-react';
 
-const App = () => {
+const AppContent = () => {
   const [selectedArchId, setSelectedArchId] = useState<ArchType>(ArchType.Monolithic);
   
+  // Audio Narration Context & State
+  const {
+    state: audioState,
+    settings: audioSettings,
+    playArchitecture,
+    togglePlayPause,
+    stopAudio,
+    isSupported: isTtsSupported
+  } = useAudioNarration();
+
+  const [showAudioStudioModal, setShowAudioStudioModal] = useState(false);
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
+
+  // Auto sync / play architecture if user changes selection and audio was active or autoPlay is on
+  useEffect(() => {
+    if (audioSettings.autoPlayOnArchChange || (audioState.isPlaying && audioState.currentTrack && audioState.currentTrack.archId !== selectedArchId)) {
+      playArchitecture(selectedArchId, audioState.currentTrack?.mode || audioSettings.preferredMode || 'briefing');
+    }
+  }, [selectedArchId, audioSettings.autoPlayOnArchChange]);
+
   // Favorites State
   const [favorites, setFavorites] = useState<ArchType[]>(() => {
     try {
@@ -320,6 +350,148 @@ const App = () => {
 
               {/* Quick Actions Hub Bar */}
               <div className="shrink-0 flex items-center gap-2 self-start flex-wrap">
+                {/* Audio Narration Launcher Button & Options Dropdown */}
+                {isTtsSupported && (
+                  <div className="relative">
+                    <div className="flex items-center rounded-xl overflow-hidden shadow-sm border border-blue-500/50 bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-cyan-900/40">
+                      <button
+                        onClick={() => {
+                          if (audioState.currentTrack?.archId === selectedArch.id && (audioState.isPlaying || audioState.isPaused)) {
+                            togglePlayPause();
+                          } else {
+                            playArchitecture(selectedArch.id, audioSettings.preferredMode || 'briefing');
+                          }
+                        }}
+                        className={`py-2 px-3 text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          audioState.isPlaying && audioState.currentTrack?.archId === selectedArch.id && !audioState.isPaused
+                            ? 'bg-blue-600/60 text-white animate-pulse'
+                            : 'hover:bg-blue-600/30 text-blue-200'
+                        }`}
+                        title="Listen to comprehensive spoken audio briefing for this architecture"
+                      >
+                        {audioState.isPlaying && audioState.currentTrack?.archId === selectedArch.id && !audioState.isPaused ? (
+                          <>
+                            <Pause className="w-3.5 h-3.5 text-white fill-current" />
+                            <span>Pause Briefing</span>
+                            <span className="flex gap-0.5 items-end h-3 ml-0.5">
+                              <span className="w-0.5 bg-blue-200 animate-bounce h-2" style={{ animationDelay: '0ms' }} />
+                              <span className="w-0.5 bg-blue-200 animate-bounce h-3" style={{ animationDelay: '150ms' }} />
+                              <span className="w-0.5 bg-blue-200 animate-bounce h-1.5" style={{ animationDelay: '300ms' }} />
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Headphones className="w-3.5 h-3.5 text-blue-400" />
+                            <span>Audio Briefing</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => setShowAudioMenu(!showAudioMenu)}
+                        className="py-2 px-2 hover:bg-blue-600/40 border-l border-blue-500/40 text-blue-300 transition-colors"
+                        title="Audio narration modes & transcript studio"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {/* Audio Narration Dropdown */}
+                    {showAudioMenu && (
+                      <div className="absolute left-0 mt-1.5 w-72 bg-zinc-900 border border-zinc-700/80 rounded-xl shadow-2xl p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="text-[10px] uppercase font-bold text-zinc-400 px-2 py-1 tracking-wider border-b border-zinc-800 flex items-center justify-between">
+                          <span>Audio Narration Tracks</span>
+                          <span className="text-blue-400 font-mono">10 Pillars</span>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setShowAudioMenu(false);
+                            playArchitecture(selectedArch.id, 'comprehensive');
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-purple-950/60 hover:text-purple-200 text-xs text-zinc-300 flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                            <div>
+                              <div className="font-semibold text-white">Complete Architecture Masterclass</div>
+                              <div className="text-[10px] text-zinc-400">All 10 chapters & specifications (~8m)</div>
+                            </div>
+                          </div>
+                          <Play className="w-3 h-3 text-zinc-500 group-hover:text-purple-400 shrink-0" />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setShowAudioMenu(false);
+                            playArchitecture(selectedArch.id, 'briefing');
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-blue-950/60 hover:text-blue-200 text-xs text-zinc-300 flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                            <div>
+                              <div className="font-semibold text-white">Executive Briefing</div>
+                              <div className="text-[10px] text-zinc-400">Premise, use case & trade-offs (~1.5m)</div>
+                            </div>
+                          </div>
+                          <Play className="w-3 h-3 text-zinc-500 group-hover:text-blue-400 shrink-0" />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setShowAudioMenu(false);
+                            playArchitecture(selectedArch.id, 'dataflow');
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-emerald-950/60 hover:text-emerald-200 text-xs text-zinc-300 flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Workflow className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <div>
+                              <div className="font-semibold text-white">Request & Data Flow</div>
+                              <div className="text-[10px] text-zinc-400">Step-by-step pipeline execution (~3m)</div>
+                            </div>
+                          </div>
+                          <Play className="w-3 h-3 text-zinc-500 group-hover:text-emerald-400 shrink-0" />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setShowAudioMenu(false);
+                            playArchitecture(selectedArch.id, 'resilience');
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-950/60 hover:text-rose-200 text-xs text-zinc-300 flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                            <div>
+                              <div className="font-semibold text-white">Failure Modes & Resilience</div>
+                              <div className="text-[10px] text-zinc-400">Chaos scenarios & mitigations (~3m)</div>
+                            </div>
+                          </div>
+                          <Play className="w-3 h-3 text-zinc-500 group-hover:text-rose-400 shrink-0" />
+                        </button>
+
+                        <div className="h-px bg-zinc-800 my-1" />
+
+                        <button
+                          onClick={() => {
+                            setShowAudioMenu(false);
+                            setShowAudioStudioModal(true);
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-xs text-indigo-300 font-semibold flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Audio Studio & All Tracks</span>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-indigo-400" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button
                   onClick={() => setShowAiAssistantModal(true)}
                   className="py-2 px-3.5 bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-purple-600/30 hover:from-blue-600/50 hover:to-purple-600/50 border border-blue-500/50 text-blue-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm group"
@@ -888,7 +1060,28 @@ const App = () => {
         onOpenChange={setShowAiAssistantModal}
       />
 
+      {/* Audio Narration Script & Voice Studio Modal */}
+      {showAudioStudioModal && (
+        <AudioScriptModal
+          archId={selectedArchId}
+          onClose={() => setShowAudioStudioModal(false)}
+        />
+      )}
+
+      {/* Persistent Floating Audio Narration Player Bar */}
+      <AudioNarrationPlayer
+        onOpenStudio={() => setShowAudioStudioModal(true)}
+      />
+
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AudioNarrationProvider>
+      <AppContent />
+    </AudioNarrationProvider>
   );
 };
 

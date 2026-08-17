@@ -1,6 +1,6 @@
 {
   "name": "ArchFiddle - SaaS Architecture Encyclopedia",
-  "description": "A comprehensive interactive guide to SaaS software architectural styles, interactive Architecture Playground simulation canvas, high-resolution diagram export studio (PNG/SVG), production starter skeletons, Forward Deployed Engineering (FDE) curriculum, and official certification.",
+  "description": "A comprehensive interactive guide to SaaS software architectural styles with spoken Text-to-Speech audio narration, interactive Architecture Playground simulation canvas, high-resolution diagram export studio (PNG/SVG), production starter skeletons, Forward Deployed Engineering (FDE) curriculum, and certification.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -24,8 +24,12 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronRight,
-  Info
+  Info,
+  Headphones,
+  Volume2
 } from 'lucide-react';
+import { useAudioNarration } from '../src/context/AudioNarrationContext';
+import { NarrationMode } from '../src/types/tts';
 
 interface ArchitectureDeepDiveSectionProps {
   architecture: ArchitectureData;
@@ -43,6 +47,13 @@ export const ArchitectureDeepDiveSection: React.FC<ArchitectureDeepDiveSectionPr
   const [activeTab, setActiveTab] = useState<DeepDiveTab>('dataflow');
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
   const [expandedFailureIndex, setExpandedFailureIndex] = useState<number | null>(0);
+
+  const { playArchitecture, isSupported: isTtsSupported } = useAudioNarration();
+
+  const handleListenCurrentTab = () => {
+    if (!spec) return;
+    playArchitecture(architecture, activeTab as NarrationMode);
+  };
 
   const spec = architecture.deepDiveSpec;
 
@@ -133,6 +144,17 @@ export const ArchitectureDeepDiveSection: React.FC<ArchitectureDeepDiveSectionPr
             </button>
           );
         })}
+
+        {isTtsSupported && (
+          <button
+            onClick={handleListenCurrentTab}
+            className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-700/60 transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
+            title="Listen to this section via voice narration"
+          >
+            <Volume2 className="w-3.5 h-3.5 text-blue-400" />
+            <span>Listen to Tab</span>
+          </button>
+        )}
       </div>
 
       {/* Tab Content Area */}
