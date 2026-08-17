@@ -33,6 +33,77 @@ export interface EstimationData {
   maintenanceEffort: 'Low' | 'Medium' | 'High' | 'Very High';
 }
 
+export interface DataFlowStep {
+  step: number;
+  phase: string;
+  title: string;
+  description: string;
+  components: string[];
+  latency: string;
+  protocol: string;
+}
+
+export interface ConcurrencyAndStateModel {
+  transactionScope: string;
+  isolationLevel: string;
+  lockingStrategy: string;
+  distributedPatterns: string[];
+  stateDescription: string;
+}
+
+export interface FailureMode {
+  failureScenario: string;
+  impactLevel: 'Critical' | 'High' | 'Medium' | 'Low';
+  rootCause: string;
+  detectionSignal: string;
+  mitigationMechanism: string;
+  resiliencePattern: string;
+}
+
+export interface SecurityModel {
+  authentication: string;
+  authorization: string;
+  serviceToServiceAuth: string;
+  secretManagement: string;
+  dataProtection: string;
+  complianceCertifications: string[];
+}
+
+export interface ScaleBottleneck {
+  bottleneck: string;
+  threshold: string;
+  symptom: string;
+  engineeringSolution: string;
+}
+
+export interface RealWorldCaseStudy {
+  company: string;
+  scaleMetric: string;
+  problemEncountered: string;
+  architecturalSolution: string;
+  keyTakeaway: string;
+}
+
+export interface ArchitectureDecisionRecord {
+  title: string;
+  status: 'Proposed' | 'Accepted' | 'Superseded' | 'Deprecated';
+  context: string;
+  decision: string;
+  positiveConsequences: string[];
+  negativeConsequences: string[];
+  complianceNotes: string;
+}
+
+export interface DeepDiveArchitectureSpec {
+  dataFlowSteps: DataFlowStep[];
+  concurrencyAndState: ConcurrencyAndStateModel;
+  failureModes: FailureMode[];
+  securityModel: SecurityModel;
+  scalabilityBottlenecks: ScaleBottleneck[];
+  caseStudies: RealWorldCaseStudy[];
+  adrSpecimen: ArchitectureDecisionRecord;
+}
+
 export interface ArchitectureData {
   id: ArchType;
   title: string;
@@ -47,6 +118,7 @@ export interface ArchitectureData {
   pros: string[];
   cons: string[];
   estimation: EstimationData;
+  deepDiveSpec?: DeepDiveArchitectureSpec;
 }
 
 export interface ChatMessage {

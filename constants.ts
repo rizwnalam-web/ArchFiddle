@@ -1,5 +1,6 @@
 
 import { ArchitectureData, ArchType, ArchCategory } from './types';
+import { ARCHITECTURE_DEEP_DIVES } from './data/architectureDeepDiveData';
 
 export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
   [ArchType.Monolithic]: {
@@ -11,7 +12,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Single deployable unit containing UI, logic, and data access",
     useCase: "MVPs, legacy systems, low-traffic internal tools, early-stage startups",
     description: "A unified software model where the user interface, business logic, and data access code are combined into a single executable. All components share the same memory space and resources.\n\nDeployment Challenges: Requires a complete restart of the application for any change, causing potential downtime. A small change in one module necessitates re-deploying the entire stack.\n\nCommon Pitfalls: Ideally suitable for small teams, but as the team grows, merge conflicts and long CI/CD pipelines become major bottlenecks. 'Dependency Hell' is common where updating a library for one feature breaks another.",
-    technologyStack: ["Java (Spring Boot)", "Ruby on Rails", "Django (Python)", "Laravel (PHP)", "PostgreSQL/MySQL"],
+    technologyStack: [".NET 8 (ASP.NET Core)", "Java (Spring Boot)", "Ruby on Rails", "Django (Python)", "Laravel (PHP)", "PostgreSQL/MySQL"],
     prerequisites: ["Simple build pipeline", "Single server or simple cluster", "Standard relational database"],
     pros: ["Simple development workflow", "Easy debugging", "Straightforward deployment", "Low latency (internal calls)"],
     cons: ["Tight coupling", "Scalability limits", "Technology lock-in", "Long build times"],
@@ -23,7 +24,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "1-5 devs",
       complexityScore: 2,
       maintenanceEffort: 'Low'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.Monolithic]
   },
   [ArchType.Layered]: {
     id: ArchType.Layered,
@@ -34,7 +36,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Horizontal separation of concerns (UI → Biz → Data)",
     useCase: "Traditional ERP, on-premise CRM, corporate banking apps",
     description: "Organizes code into logical layers (Presentation, Business, Persistence, Database). Requests flow strictly downwards through layers, enforcing separation of concerns.\n\nDeployment Challenges: Deployments often involve coordinated updates across layers, especially if the database schema changes alongside business logic. Rolling back can be difficult if the DB layer is not backward compatible.\n\nCommon Pitfalls: 'Sinkhole anti-pattern' where requests just pass through layers without logic, adding overhead. Strict layering can lead to performance issues due to object mapping overhead.",
-    technologyStack: ["Java EE", "ASP.NET", "Hibernate", "Oracle/SQL Server"],
+    technologyStack: [".NET 8 (Clean N-Tier / EF Core)", "Java EE / Spring", "ASP.NET MVC", "Hibernate", "Oracle / SQL Server"],
     prerequisites: ["Clear separation of concerns", "ORM framework", "Middleware for tier communication"],
     pros: ["Separation of concerns", "Testability (mocking layers)", "Standardized structure", "Easy to maintain (initially)"],
     cons: ["Performance overhead (layer hopping)", "Deployment synchronization", "Scalability limits (database tier bottleneck)"],
@@ -46,7 +48,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "5-20 devs",
       complexityScore: 4,
       maintenanceEffort: 'Medium'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.Layered]
   },
   [ArchType.SOA]: {
     id: ArchType.SOA,
@@ -57,7 +60,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Coarse-grained business services exposed via ESB",
     useCase: "Large enterprise suites, legacy wrapping, B2B integration, telecommunication backbones",
     description: "An architectural style where services are provided to other components by application components, through a communication protocol over a network. It typically relies on an Enterprise Service Bus (ESB).\n\nDeployment Challenges: The ESB becomes a single point of failure and a bottleneck for deployment. Deploying a new service might require updating the ESB configuration, affecting other services.\n\nCommon Pitfalls: Investing too much logic into the ESB (Smart pipes, dumb endpoints) making the middleware heavy and hard to change. Over-abstraction leading to complex WSDL/SOAP contracts.",
-    technologyStack: ["SOAP/XML", "Enterprise Service Bus (MuleSoft, Tibco)", "ActiveMQ", "Java/C#"],
+    technologyStack: [".NET 8 (CoreWCF / MassTransit ESB)", "SOAP/XML & WSDL", "Enterprise Service Bus (MuleSoft, Tibco)", "ActiveMQ", "Java / Camel"],
     prerequisites: ["Centralized middleware (ESB)", "Strict governance policies", "Defined service contracts"],
     pros: ["Reusability of services", "Loose coupling (via ESB)", "Legacy system integration", "Protocol bridging"],
     cons: ["High complexity", "ESB bottleneck", "High latency", "Expensive middleware"],
@@ -69,7 +72,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "20+ devs",
       complexityScore: 8,
       maintenanceEffort: 'High'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.SOA]
   },
   [ArchType.Microservices]: {
     id: ArchType.Microservices,
@@ -80,7 +84,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Fine-grained, independently deployable services with isolated databases",
     useCase: "Cloud-native platforms, rapid-release products, high-velocity teams (Netflix, Uber scale)",
     description: "Structuring an application as a collection of services that are highly maintainable, testable, loosely coupled, independently deployable, and organized around business capabilities.\n\nDeployment Challenges: Managing hundreds of independent CI/CD pipelines. Ensuring API backward compatibility. Distributed tracing and debugging across service boundaries.\n\nCommon Pitfalls: 'Distributed Monolith' - tightly coupled microservices that must be deployed together. Not implementing circuit breakers leads to cascading failures. Over-engineering for small scale.",
-    technologyStack: ["Docker/Kubernetes", "Go/Node.js/Java", "REST/gRPC", "Prometheus/Grafana", "Istio"],
+    technologyStack: [".NET 8 Web API & gRPC", "Docker / Kubernetes", "Go / NestJS / Java", "MassTransit / RabbitMQ", "Prometheus / OpenTelemetry", "Istio"],
     prerequisites: ["Automated CI/CD", "Container orchestration", "API Gateway", "Service discovery"],
     pros: ["Independent scaling", "Technology agility", "Fault isolation", "Aligned with Agile teams"],
     cons: ["Distributed system complexity", "Operational overhead", "Data consistency (CAP theorem)", "Network latency"],
@@ -92,7 +96,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "10-100+ devs",
       complexityScore: 9,
       maintenanceEffort: 'Very High'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.Microservices]
   },
   [ArchType.Serverless]: {
     id: ArchType.Serverless,
@@ -103,7 +108,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Code runs on managed ephemeral containers with pay-per-execution billing",
     useCase: "Spiky workloads, cron jobs, image/video processing, cost-optimized API backends",
     description: "Allows developers to build and run applications without thinking about servers. The cloud provider automatically provisions, scales, and manages the infrastructure.\n\nDeployment Challenges: 'Cold starts' can impact user experience. Testing locally is difficult as it requires mocking cloud vendor services. Vendor lock-in makes migrating deployment scripts hard.\n\nCommon Pitfalls: Using FaaS for long-running tasks (timeout limits). Ignoring function concurrency limits leading to throttling. High costs at consistent high volume compared to containers.",
-    technologyStack: ["AWS Lambda", "Azure Functions", "Google Cloud Functions", "DynamoDB", "API Gateway"],
+    technologyStack: [".NET 8 Native AOT Lambda", "Azure Functions v4 (Isolated C#)", "AWS Lambda", "Google Cloud Functions", "DynamoDB / CosmosDB", "API Gateway"],
     prerequisites: ["Cloud provider account", "Stateless logic", "Event triggers (HTTP, S3, DB streams)"],
     pros: ["No server management", "Pay-per-use", "Auto-scaling (zero to infinity)", "Reduced ops overhead"],
     cons: ["Cold starts", "Vendor lock-in", "Limited execution time", "Statelessness constraints"],
@@ -115,7 +120,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "1-10 devs",
       complexityScore: 5,
       maintenanceEffort: 'Low'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.Serverless]
   },
   [ArchType.ContainerNative]: {
     id: ArchType.ContainerNative,
@@ -126,7 +132,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Packaged services with declarative scaling, ingress, and service mesh management",
     useCase: "Hybrid-cloud platforms, high-density microservices, enterprise SaaS, multi-tenant clusters",
     description: "Applications packaged in containers and orchestrated by Kubernetes. Leverages declarative configuration, sidecars, and service meshes.\n\nDeployment Challenges: Complexity of Helm charts and YAML configurations. Managing persistent storage (PV/PVC) in ephemeral environments. Upgrading the K8s cluster itself.\n\nCommon Pitfalls: Resource limits misconfiguration causing OOMKilled. Over-using sidecars consuming too many resources. Security misconfiguration (running as root).",
-    technologyStack: ["Docker", "Kubernetes (K8s)", "Helm", "Istio/Linkerd", "ArgoCD", "Prometheus"],
+    technologyStack: [".NET 8 Chiseled Ubuntu Containers", "Docker", "Kubernetes (K8s)", "Helm 3", "Istio/Linkerd", "ArgoCD", "Prometheus / Grafana"],
     prerequisites: ["Container registry", "K8s Cluster", "GitOps workflow", "Observability stack"],
     pros: ["Portability (Hybrid cloud)", "High density/Resource efficiency", "Self-healing", "Declarative Infrastructure"],
     cons: ["Steep learning curve", "Management complexity", "Security hardening", "Overhead for small apps"],
@@ -138,7 +144,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "5-50 devs",
       complexityScore: 9,
       maintenanceEffort: 'High'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.ContainerNative]
   },
   [ArchType.GitOps]: {
     id: ArchType.GitOps,
@@ -149,7 +156,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Git is the single source of truth for declaratively desired application and infrastructure state",
     useCase: "Kubernetes environments, multi-cluster platform engineering, compliance-heavy banking & healthcare infrastructure",
     description: "An operational framework that applies Git version control to infrastructure and application deployment configs. Agents in the cluster continuously pull state from Git and reconcile any drift automatically.\n\nDeployment Challenges: Managing secret encryption (e.g., SealedSecrets, Vault) inside Git repositories securely. Handling database migration jobs without causing reconciliation loops.\n\nCommon Pitfalls: Configuration drift if manual changes are made via cloud web consoles instead of Git commits. Over-complex Helm chart dependencies and templating sprawl.",
-    technologyStack: ["ArgoCD", "Flux CD", "Terraform / OpenTofu", "Helm", "Kubernetes", "GitHub Actions / GitLab CI"],
+    technologyStack: [".NET 8 (Pulumi C# / GitHub Actions)", "ArgoCD", "Flux CD", "Terraform / OpenTofu", "Helm", "Kubernetes", "GitLab CI"],
     prerequisites: ["Git repository governance", "Declarative config files (YAML/HCL)", "Reconciliation controller running in cluster"],
     pros: ["Automated drift detection & reconciliation", "Audit trail & easy rollbacks via Git revert", "Developer self-service via PRs", "High security (no direct human cluster credentials)"],
     cons: ["Steep learning curve for Git workflows", "Secret management complexity", "Delayed feedback during sync loops"],
@@ -161,7 +168,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "3-30 devs",
       complexityScore: 7,
       maintenanceEffort: 'Low'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.GitOps]
   },
   [ArchType.EventDriven]: {
     id: ArchType.EventDriven,
@@ -172,7 +180,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Asynchronous event triggers, producers, brokers, and reactive event reactions",
     useCase: "Real-time analytics, IoT data pipelines, complex order workflows, financial trading systems",
     description: "A design paradigm in which software components execute in response to receiving one or more event notifications. It decouples producers from consumers.\n\nDeployment Challenges: Schema evolution for events is critical; changing an event structure breaks all consumers. Replaying events for bug fixing or data recovery is complex.\n\nCommon Pitfalls: Creating event loops (A triggers B triggers A). Loss of visibility into business transaction flow (choreography vs orchestration). Event sourcing without snapshots leads to slow replay times.",
-    technologyStack: ["Apache Kafka", "RabbitMQ", "AWS SNS/SQS", "Redis Streams", "Apache Flink"],
+    technologyStack: [".NET 8 (MassTransit / Kafka / RabbitMQ)", "Apache Kafka", "RabbitMQ", "AWS SNS/SQS", "Redis Streams", "Apache Flink"],
     prerequisites: ["Message Broker", "Schema Registry", "Async error handling (Dead Letter Queues)"],
     pros: ["High decoupling", "Asynchronous processing", "Scalability (buffering)", "Real-time responsiveness"],
     cons: ["Eventual consistency", "Hard to debug/trace", "Message ordering guarantees", "Complexity of error handling"],
@@ -184,7 +192,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "5-30 devs",
       complexityScore: 8,
       maintenanceEffort: 'High'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.EventDriven]
   },
   [ArchType.Reactive]: {
     id: ArchType.Reactive,
@@ -195,8 +204,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Message-driven, back-pressure aware, non-blocking I/O execution models",
     useCase: "High-frequency trading, multiplayer gaming servers, telemetry processing, live video streaming",
     description: "Systems designed to be responsive, resilient, elastic, and message-driven. Emphasizes non-blocking I/O and back-pressure to handle load.\n\nDeployment Challenges: Debugging non-blocking stack traces is notoriously difficult. Tuning thread pools and back-pressure buffers requires deep expertise.\n\nCommon Pitfalls: Blocking the event loop (e.g., DB call on main thread). Uncontrolled unbounded queues leading to memory leaks. Complexity in error handling flow.",
-    technologyStack: ["Akka", "Vert.x", "RxJava/Reactor", "Node.js (Streams)", "Kafka"],
-    prerequisites: ["Async drivers (R2DBC)", "Reactive libraries", "Event loop knowledge"],
+    technologyStack: [".NET 8 (Rx.NET / System.Threading.Channels)", "Akka.NET / Akka", "Vert.x", "RxJava/Reactor", "Node.js (Streams)", "Kafka"],
+    prerequisites: ["Async drivers (R2DBC / Npgsql)", "Reactive libraries", "Event loop knowledge"],
     pros: ["Extreme resource efficiency", "High throughput", "Low latency", "Graceful degradation"],
     cons: ["High cognitive load (callback hell/streams)", "Debugging difficulty", "Library support (async drivers)", "Steep learning curve"],
     estimation: {
@@ -207,7 +216,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "3-15 expert devs",
       complexityScore: 10,
       maintenanceEffort: 'High'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.Reactive]
   },
   [ArchType.SpaceBased]: {
     id: ArchType.SpaceBased,
@@ -218,7 +228,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Tuple space / In-memory grid for extreme transactional scale and zero DB bottleneck",
     useCase: "High-volume transactional systems, airline reservation engines, stock exchanges, sports betting platforms",
     description: "Designed to avoid the database bottleneck by keeping data in-memory across a grid of processing units. Data is replicated and partitioned (sharded) in RAM.\n\nDeployment Challenges: 'Split-brain' scenarios where network partitions cause data inconsistency. Cold restart times (reloading TBs of data into RAM) are slow.\n\nCommon Pitfalls: Running out of RAM (Costly). Data consistency issues during grid rebalancing. Complexity of distributed transactions.",
-    technologyStack: ["Hazelcast", "Apache Ignite", "GigaSpaces", "Redis Cluster", "Oracle Coherence"],
+    technologyStack: [".NET 8 (StackExchange.Redis Grid / Write-Behind Worker)", "Hazelcast", "Apache Ignite", "GigaSpaces", "Redis Cluster", "Oracle Coherence"],
     prerequisites: ["In-memory Data Grid (IMDG)", "Data partitioning strategy", "Persistent backing store (async write-behind)"],
     pros: ["Extreme write scalability", "Microsecond latency", "No database bottleneck", "Linear scalability"],
     cons: ["Very expensive (RAM)", "Data consistency complexity", "Complex crash recovery", "Niche expertise required"],
@@ -230,7 +240,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "5-20 devs",
       complexityScore: 9,
       maintenanceEffort: 'High'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.SpaceBased]
   },
   [ArchType.WebOriented]: {
     id: ArchType.WebOriented,
@@ -241,19 +252,20 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Browser + API-first separation with static asset distribution and headless services",
     useCase: "SaaS dashboards, modern e-commerce frontends, content publishing platforms, web portals",
     description: "Emphasizes the separation of the frontend (SPA/PWA) from the backend APIs. Often leverages CDNs for static asset delivery and third-party APIs for functionality.\n\nDeployment Challenges: Handling CORS issues. Managing token refresh strategies securely in the browser. Ensuring SEO for Client-Side Rendered apps.\n\nCommon Pitfalls: Leaking secrets in frontend code. Over-fetching data leading to slow page loads (N+1 problem). Accessibility neglect.",
-    technologyStack: ["React/Vue/Angular", "Node.js/Express", "GraphQL", "Auth0/Firebase", "Vercel/Netlify"],
+    technologyStack: [".NET 8 (Blazor WebAssembly & Minimal API)", "Next.js / React", "Vue/Angular", "GraphQL", "Auth0/Firebase", "Vercel/Netlify / Azure Static Web Apps"],
     prerequisites: ["CDN", "REST/GraphQL API", "Identity Provider", "CI/CD for frontend"],
     pros: ["Rich user experience", "Decoupled frontend/backend", "Global CDN distribution", "PWA capabilities"],
     cons: ["SEO complexity (SSR/CSR)", "Client-side state management", "CORS/Security headers", "API latency dependence"],
     estimation: {
       devSpeed: 'Rapid',
-      devSpeedDesc: "Excellent tooling (Vite, Next.js) and component ecosystems.",
+      devSpeedDesc: "Excellent tooling (Vite, Next.js, Blazor) and component ecosystems.",
       infraCost: 'Low',
       infraCostDesc: "Static hosting is free/cheap; costs shift to API calls.",
       teamSize: "2-15 devs",
       complexityScore: 3,
       maintenanceEffort: 'Low'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.WebOriented]
   },
   [ArchType.MobileFirst]: {
     id: ArchType.MobileFirst,
@@ -264,7 +276,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Offline-capable, sync-aware architecture leveraging on-device databases and delta updates",
     useCase: "Field service mobile apps, logistics tracking, flight attendant tablets, mobile social apps",
     description: "Designed assuming the mobile device is the primary client, often with unreliable network. Uses local databases and sync protocols.\n\nDeployment Challenges: App Store approval processes delay releases. Handling breaking API changes for older app versions that users haven't updated.\n\nCommon Pitfalls: Trusting client-side validation. Battery drain due to excessive background syncing. Data conflicts when two devices edit the same record offline.",
-    technologyStack: ["React Native/Flutter", "SQLite/Realm", "Firebase Realtime DB", "GraphQL Subscription"],
+    technologyStack: [".NET 8 (.NET MAUI + SQLite-net)", "React Native/Flutter", "SQLite/Realm", "Firebase Realtime DB", "GraphQL Subscription"],
     prerequisites: ["Local storage strategy", "Sync protocol", "Push notifications", "Conflict resolution logic"],
     pros: ["Works offline", "Native device features", "Low latency (local read)", "Better UX on slow networks"],
     cons: ["Sync complexity (conflict resolution)", "Multiple client versions", "Battery/Storage constraints", "App Store gating"],
@@ -276,7 +288,8 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "3-15 devs",
       complexityScore: 7,
       maintenanceEffort: 'Medium'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.MobileFirst]
   },
   [ArchType.EdgeComputing]: {
     id: ArchType.EdgeComputing,
@@ -287,7 +300,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
     coreIdea: "Move compute execution and key-value storage directly to edge CDN nodes worldwide",
     useCase: "CDN-heavy applications, real-time image transformation, localized compliance, IoT edge gateways",
     description: "Distributes application logic to the edge of the network (CDNs, cell towers) to minimize latency and bandwidth usage.\n\nDeployment Challenges: Distributing code to hundreds of edge locations requires robust edge-worker platforms. Observability is fragmented across regions, making centralized logging difficult.\n\nCommon Pitfalls: 'The speed of light constraint' - expecting edge nodes to talk to a central DB instantly defeats the purpose. Edge logic must be largely self-contained or use replicated/eventual consistent data. Runtime environments often have strict limits (CPU time, memory, code size).",
-    technologyStack: ["Cloudflare Workers", "AWS Lambda@Edge", "Vercel Edge Functions", "WASM", "Akamai EdgeWorkers"],
+    technologyStack: [".NET 8 Native AOT Edge Containers", "Cloudflare Workers", "AWS Lambda@Edge", "Vercel Edge Functions", "WASM", "Akamai EdgeWorkers"],
     prerequisites: ["Global CDN provider", "Edge-compatible runtime (V8 isolates)", "Distributed data strategy (KV store)"],
     pros: ["Lowest possible latency", "Bandwidth savings", "Global scalability", "DDOS resistance"],
     cons: ["Limited runtime environment", "Testing complexity", "Data synchronization", "Fragmented observability"],
@@ -299,6 +312,7 @@ export const ARCHITECTURE_DETAILS: Record<ArchType, ArchitectureData> = {
       teamSize: "3-10 devs",
       complexityScore: 7,
       maintenanceEffort: 'Medium'
-    }
+    },
+    deepDiveSpec: ARCHITECTURE_DEEP_DIVES[ArchType.EdgeComputing]
   }
 };

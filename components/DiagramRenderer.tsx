@@ -1,9 +1,38 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import {
+  Download,
+  FileImage,
+  FileCode,
+  Copy,
+  Check,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Code,
+  Sparkles,
+  Layers,
+  Settings2,
+  Maximize2,
+  ChevronDown,
+  Sliders,
+  Eye,
+  CheckCircle,
+  FileText
+} from 'lucide-react';
 import { ArchType } from '../types';
+import { ARCHITECTURE_DETAILS } from '../constants';
+import { DiagramExportModal } from './DiagramExportModal';
+import {
+  downloadSvgDiagram,
+  downloadRasterDiagram,
+  copyDiagramImageToClipboard,
+  getCleanSvgString,
+} from '../src/utils/diagramExport';
 
 interface DiagramProps {
   type: ArchType;
+  onOpenExport?: () => void;
 }
 
 interface NodeData {
@@ -18,7 +47,11 @@ export const DiagramRenderer: React.FC<DiagramProps> = ({ type }) => {
   const [activeNode, setActiveNode] = useState<NodeData | null>(null);
   const [showLegend, setShowLegend] = useState(false);
   const [showCopiedToast, setShowCopiedToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('Diagram Copied!');
   
+  // Export Studio Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+
   // Code Viewer State
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [svgCode, setSvgCode] = useState('');
@@ -38,6 +71,8 @@ export const DiagramRenderer: React.FC<DiagramProps> = ({ type }) => {
   const dragStart = useRef({ x: 0, y: 0 });
   const lastTransform = useRef({ x: 0, y: 0 });
   const hasMoved = useRef(false);
+
+  const currentArch = ARCHITECTURE_DETAILS[type];
 
   // Reset state when type changes
   useEffect(() => {
@@ -135,87 +170,63 @@ export const DiagramRenderer: React.FC<DiagramProps> = ({ type }) => {
     }
   };
   
-  const prepareCanvasFromSvg = (svgElement: SVGSVGElement, scale = 2): Promise<HTMLCanvasElement> => {
-    return new Promise((resolve, reject) => {
-      try {
-        const serializer = new XMLSerializer();
-        let source = serializer.serializeToString(svgElement);
-
-        if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-          source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-        }
-
-        const cleanSource = source.replace(
-          /transform="translate\([^)]+\)\s*scale\([^)]+\)"/, 
-          'transform="translate(0, 0) scale(1)"'
-        );
-
-        const svgBlob = new Blob([cleanSource], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 400 * scale;
-          canvas.height = 300 * scale;
-          const ctx = canvas.getContext('2d');
-          
-          if (ctx) {
-            ctx.fillStyle = '#09090b'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            URL.revokeObjectURL(url);
-            resolve(canvas);
-          } else {
-            reject(new Error("Could not get canvas context"));
-          }
-        };
-        img.onerror = (e) => {
-          URL.revokeObjectURL(url);
-          reject(e);
-        };
-        img.src = url;
-      } catch (e) {
-        reject(e);
-      }
-    });
-  };
-
   const handleCopyDiagram = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const svgElement = containerRef.current?.querySelector('svg');
     if (!svgElement) return;
 
     try {
-      const canvas = await prepareCanvasFromSvg(svgElement);
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          setShowCopiedToast(true);
-          setTimeout(() => setShowCopiedToast(false), 2000);
-        }
+      const success = await copyDiagramImageToClipboard(svgElement, {
+        archType: type,
+        archTitle: currentArch?.title,
+        category: currentArch?.category,
+        scale: 2,
+        theme: 'obsidian',
+        includeBanner: true,
+        includeWatermark: true,
       });
+
+      if (success) {
+        setToastMessage('High-Res PNG Copied to Clipboard!');
+        setShowCopiedToast(true);
+        setTimeout(() => setShowCopiedToast(false), 2500);
+      }
     } catch (err) {
       console.error('Copy failed', err);
     }
   };
 
-  const handleDownload = async (format: 'png' | 'jpeg') => {
+  const handleDownload = async (format: 'png' | 'svg' | 'jpeg') => {
     const svgElement = containerRef.current?.querySelector('svg');
     if (!svgElement) return;
 
     try {
-      const canvas = await prepareCanvasFromSvg(svgElement, 3); 
-      const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-      const dataUrl = canvas.toDataURL(mimeType, 0.9);
+      if (format === 'svg') {
+        downloadSvgDiagram(svgElement, {
+          archType: type,
+          archTitle: currentArch?.title,
+          category: currentArch?.category,
+          theme: 'obsidian',
+          includeBanner: true,
+          includeWatermark: true,
+        });
+        setToastMessage('SVG Vector File Downloaded!');
+      } else {
+        await downloadRasterDiagram(svgElement, {
+          archType: type,
+          archTitle: currentArch?.title,
+          category: currentArch?.category,
+          format: format as any,
+          scale: 2,
+          theme: 'obsidian',
+          includeBanner: true,
+          includeWatermark: true,
+        });
+        setToastMessage(`High-Res ${format.toUpperCase()} Downloaded!`);
+      }
       
-      const link = document.createElement('a');
-      link.download = `${type.replace(/\s+/g, '-').toLowerCase()}-architecture.${format}`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
+      setShowCopiedToast(true);
+      setTimeout(() => setShowCopiedToast(false), 2500);
       setShowDownloadMenu(false);
     } catch (err) {
       console.error('Download failed', err);
@@ -974,145 +985,262 @@ export const DiagramRenderer: React.FC<DiagramProps> = ({ type }) => {
         )}
       </div>
 
-      {/* Controls */}
+      {/* Floating Controls Bar */}
       <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
-         <button onClick={handleShowCode} className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md shadow-lg transition-colors group relative" title="View SVG Code">
-             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-         </button>
-         
-         <button onClick={handleCopyDiagram} className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md shadow-lg transition-colors group relative" title="Copy to Clipboard">
-             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-         </button>
-         
-         <div className="relative">
-           <button 
-             onClick={() => setShowDownloadMenu(!showDownloadMenu)} 
-             className={`p-2 text-white rounded-md shadow-lg transition-colors group relative ${showDownloadMenu ? 'bg-blue-600' : 'bg-zinc-800 hover:bg-zinc-700'}`}
-             title="Download Image"
-           >
-               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-           </button>
-           {showDownloadMenu && (
-             <div className="absolute right-full top-0 mr-2 bg-zinc-800 rounded-md border border-zinc-700 shadow-xl overflow-hidden flex flex-col min-w-[80px] animate-in fade-in slide-in-from-right-2 duration-150">
-               <button onClick={() => handleDownload('png')} className="px-3 py-2 text-xs text-left hover:bg-zinc-700 text-zinc-200 hover:text-white transition-colors">PNG</button>
-               <button onClick={() => handleDownload('jpeg')} className="px-3 py-2 text-xs text-left hover:bg-zinc-700 text-zinc-200 hover:text-white transition-colors">JPEG</button>
-             </div>
-           )}
-         </div>
+        {/* Export Studio Main CTA */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+            className={`p-2 rounded-xl shadow-xl transition-all flex items-center justify-center group relative border ${
+              showDownloadMenu
+                ? 'bg-blue-600 border-blue-400 text-white shadow-blue-900/60 ring-2 ring-blue-400/40'
+                : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-700/80 text-blue-400 hover:text-white shadow-black/60'
+            }`}
+            title="Export Architecture Diagram (PNG / SVG)"
+          >
+            <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
+          </button>
 
-         <button onClick={handleZoomIn} className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md shadow-lg transition-colors" title="Zoom In">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-         </button>
-         <button onClick={handleZoomOut} className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md shadow-lg transition-colors" title="Zoom Out">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
-         </button>
-         <button onClick={handleReset} className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md shadow-lg transition-colors" title="Reset View">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-         </button>
+          {showDownloadMenu && (
+            <div className="absolute right-full top-0 mr-2.5 bg-zinc-950/95 backdrop-blur-md rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden flex flex-col min-w-[210px] animate-in fade-in slide-in-from-right-2 duration-150 p-1.5 z-40">
+              <div className="px-2.5 py-1.5 border-b border-zinc-800/80 text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
+                <span>Export Diagram</span>
+                <span className="text-[9px] font-mono text-blue-400">High-Q</span>
+              </div>
+
+              {/* Full Studio Modal Trigger */}
+              <button
+                onClick={() => {
+                  setShowDownloadMenu(false);
+                  setShowExportModal(true);
+                }}
+                className="w-full px-2.5 py-2 mt-1 rounded-xl text-left hover:bg-blue-950/70 border border-transparent hover:border-blue-800/60 text-white transition-all flex items-center gap-2.5 group"
+              >
+                <div className="w-6 h-6 rounded-lg bg-blue-900/60 border border-blue-700/60 flex items-center justify-center text-blue-300 group-hover:scale-105 transition-transform">
+                  <Sliders className="w-3.5 h-3.5 text-blue-300" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-blue-200">Export Studio...</div>
+                  <div className="text-[10px] text-zinc-400 leading-tight">Customize DPI, Theme & Banner</div>
+                </div>
+              </button>
+
+              <div className="h-px bg-zinc-800/80 my-1" />
+
+              {/* Fast 1-Click Downloads */}
+              <button
+                onClick={() => handleDownload('png')}
+                className="w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/80 text-zinc-300 hover:text-white transition-colors flex items-center justify-between text-xs"
+              >
+                <span className="flex items-center gap-2">
+                  <FileImage className="w-3.5 h-3.5 text-blue-400" />
+                  <span>High-Res PNG (2x)</span>
+                </span>
+                <span className="text-[9px] font-mono text-zinc-500">.png</span>
+              </button>
+
+              <button
+                onClick={() => handleDownload('svg')}
+                className="w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/80 text-zinc-300 hover:text-white transition-colors flex items-center justify-between text-xs"
+              >
+                <span className="flex items-center gap-2">
+                  <FileCode className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Vector SVG Graphic</span>
+                </span>
+                <span className="text-[9px] font-mono text-zinc-500">.svg</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowDownloadMenu(false);
+                  handleCopyDiagram({ stopPropagation: () => {} } as any);
+                }}
+                className="w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/80 text-zinc-300 hover:text-white transition-colors flex items-center justify-between text-xs"
+              >
+                <span className="flex items-center gap-2">
+                  <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Copy Image to Clipboard</span>
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Copy Image Button */}
+        <button
+          onClick={handleCopyDiagram}
+          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-300 hover:text-white rounded-xl shadow-xl transition-all group relative"
+          title="Copy High-Res PNG to Clipboard"
+        >
+          <Copy className="w-4 h-4" />
+        </button>
+
+        {/* View SVG Code */}
+        <button
+          onClick={handleShowCode}
+          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-300 hover:text-white rounded-xl shadow-xl transition-all group relative"
+          title="View SVG Source Code"
+        >
+          <Code className="w-4 h-4" />
+        </button>
+
+        <div className="h-px bg-zinc-800 my-0.5" />
+
+        {/* Zoom Controls */}
+        <button
+          onClick={handleZoomIn}
+          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-300 hover:text-white rounded-xl shadow-xl transition-all"
+          title="Zoom In"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-300 hover:text-white rounded-xl shadow-xl transition-all"
+          title="Zoom Out"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleReset}
+          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-300 hover:text-white rounded-xl shadow-xl transition-all"
+          title="Reset Pan & Zoom View"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
       </div>
-      
+
       {showCopiedToast && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xl animate-in fade-in slide-in-from-top-4">
-          Diagram Copied!
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-2xl animate-in fade-in slide-in-from-top-4 flex items-center gap-1.5 border border-emerald-400/40">
+          <CheckCircle className="w-4 h-4 text-emerald-200" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
       <svg viewBox="0 0 400 300" className="w-full h-full select-none touch-none">
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
-           {renderContent()}
+          {renderContent()}
         </g>
       </svg>
       
       {/* Detailed Overlay Panel */}
       {activeNode && (
-          <div className="absolute bottom-4 left-4 right-4 bg-zinc-900/95 backdrop-blur-md border border-zinc-700 p-4 rounded-lg shadow-2xl animate-in slide-in-from-bottom-4 duration-200 z-30 cursor-default"
-               onClick={(e) => e.stopPropagation()}
-               onMouseDown={(e) => e.stopPropagation()}
-               >
-              <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                        {activeNode.title}
-                        {activeNode.sub && <span className="text-xs font-normal text-zinc-400 px-2 py-0.5 bg-zinc-800 rounded-full">{activeNode.sub}</span>}
-                    </h4>
-                    <p className="text-sm text-zinc-300 mt-1 leading-relaxed">{activeNode.description}</p>
-                  </div>
-                  <button onClick={() => setActiveNode(null)} className="text-zinc-500 hover:text-white p-1">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-              </div>
-              
-              {activeNode.flows && activeNode.flows.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-zinc-800">
-                      <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Data Flows & Interactions</span>
-                      <ul className="mt-1 space-y-1">
-                          {activeNode.flows.map((flow: string, idx: number) => (
-                              <li key={idx} className="text-xs text-zinc-400 flex items-center gap-2">
-                                  <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0"></span>
-                                  {flow}
-                              </li>
-                          ))}
-                      </ul>
-                  </div>
-              )}
+        <div
+          className="absolute bottom-4 left-4 right-4 bg-zinc-900/95 backdrop-blur-md border border-zinc-700 p-4 rounded-xl shadow-2xl animate-in slide-in-from-bottom-4 duration-200 z-30 cursor-default"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                {activeNode.title}
+                {activeNode.sub && (
+                  <span className="text-xs font-normal text-zinc-400 px-2 py-0.5 bg-zinc-800 rounded-full">
+                    {activeNode.sub}
+                  </span>
+                )}
+              </h4>
+              <p className="text-sm text-zinc-300 mt-1 leading-relaxed">
+                {activeNode.description}
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveNode(null)}
+              className="text-zinc-500 hover:text-white p-1"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-       )}
-       {!activeNode && !showCodeModal && (
-         <div className="absolute bottom-2 left-2 text-[10px] text-zinc-600 pointer-events-none opacity-60">
-            Drag to pan • Scroll to zoom • Click to select
-         </div>
-       )}
+          
+          {activeNode.flows && activeNode.flows.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-zinc-800">
+              <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
+                Data Flows & Interactions
+              </span>
+              <ul className="mt-1 space-y-1">
+                {activeNode.flows.map((flow: string, idx: number) => (
+                  <li key={idx} className="text-xs text-zinc-400 flex items-center gap-2">
+                    <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0" />
+                    {flow}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!activeNode && !showCodeModal && !showExportModal && (
+        <div className="absolute bottom-2 left-2 text-[10px] text-zinc-600 pointer-events-none opacity-60">
+          Drag to pan • Scroll to zoom • Click nodes to inspect • Export button in top-right
+        </div>
+      )}
        
       {/* Code Modal */}
       {showCodeModal && (
         <div 
-          className="absolute inset-0 z-50 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200"
+          className="absolute inset-0 z-50 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-6 sm:p-8 animate-in fade-in duration-200"
           onClick={(e) => { e.stopPropagation(); }}
         >
-          <div className="bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl w-full max-w-3xl flex flex-col h-[80%] overflow-hidden" onClick={e => e.stopPropagation()}>
-             {/* Header */}
-             <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-800/50">
-                <h3 className="text-sm font-bold text-zinc-200 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                  SVG Source Code
-                </h3>
-                <button onClick={() => setShowCodeModal(false)} className="text-zinc-500 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-             </div>
-             {/* Content */}
-             <div className="flex-1 relative bg-zinc-950">
-               <textarea 
-                 readOnly 
-                 value={svgCode}
-                 className="w-full h-full bg-transparent text-zinc-400 font-mono text-xs p-4 resize-none focus:outline-none selection:bg-blue-500/30"
-                 spellCheck={false}
-               />
-             </div>
-             {/* Footer */}
-             <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex justify-end gap-3">
-                <button onClick={() => setShowCodeModal(false)} className="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white transition-colors">
-                  Close
-                </button>
-                <button 
-                  onClick={handleCopyCode}
-                  className={`px-4 py-2 text-xs font-bold text-white rounded-md shadow-lg transition-all flex items-center gap-2 ${codeCopied ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-500'}`}
-                >
-                   {codeCopied ? (
-                      <>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                        Copied!
-                      </>
-                   ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                        Copy to Clipboard
-                      </>
-                   )}
-                </button>
-             </div>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col h-[80%] overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-800/50">
+              <h3 className="text-sm font-bold text-zinc-200 flex items-center gap-2">
+                <Code className="w-4 h-4 text-blue-400" />
+                SVG Source Code
+              </h3>
+              <button onClick={() => setShowCodeModal(false)} className="text-zinc-500 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Content */}
+            <div className="flex-1 relative bg-zinc-950">
+              <textarea 
+                readOnly 
+                value={svgCode}
+                className="w-full h-full bg-transparent text-zinc-400 font-mono text-xs p-4 resize-none focus:outline-none selection:bg-blue-500/30"
+                spellCheck={false}
+              />
+            </div>
+            {/* Footer */}
+            <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex justify-end gap-3">
+              <button onClick={() => setShowCodeModal(false)} className="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white transition-colors">
+                Close
+              </button>
+              <button 
+                onClick={handleCopyCode}
+                className={`px-4 py-2 text-xs font-bold text-white rounded-xl shadow-lg transition-all flex items-center gap-2 ${codeCopied ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-500'}`}
+              >
+                {codeCopied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy to Clipboard
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Full Diagram Export Studio Modal */}
+      {showExportModal && (
+        <DiagramExportModal
+          svgElement={containerRef.current?.querySelector('svg') || null}
+          archType={type}
+          archTitle={currentArch?.title || type}
+          category={currentArch?.category}
+          onClose={() => setShowExportModal(false)}
+        />
       )}
     </div>
   );

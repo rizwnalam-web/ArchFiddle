@@ -44,6 +44,7 @@ interface ArchitectureSidebarProps {
   onOpenComparison: () => void;
   
   // Quick launchers
+  onOpenPlayground: () => void;
   onOpenFdeAcademy: () => void;
   onOpenStarterTemplates: () => void;
   onOpenQuiz: () => void;
@@ -73,6 +74,7 @@ export const ArchitectureSidebar: React.FC<ArchitectureSidebarProps> = ({
   compareList,
   onToggleCompareList,
   onOpenComparison,
+  onOpenPlayground,
   onOpenFdeAcademy,
   onOpenStarterTemplates,
   onOpenQuiz,
@@ -427,6 +429,15 @@ export const ArchitectureSidebar: React.FC<ArchitectureSidebarProps> = ({
 
       {/* Bottom Compact Quick Hub */}
       <div className="p-2 border-t border-zinc-800/80 bg-zinc-950 flex items-center justify-between text-zinc-400 text-xs shrink-0">
+        <button
+          onClick={onOpenPlayground}
+          className="p-1.5 hover:bg-indigo-950/60 hover:text-indigo-300 rounded-lg transition-colors flex items-center gap-1 text-indigo-400 font-bold"
+          title="Architecture Playground (Interactive Canvas)"
+        >
+          <Sparkles className="w-4 h-4 text-indigo-400" />
+          <span className="text-[10px] font-bold hidden sm:inline">Playground</span>
+        </button>
+
         <button
           onClick={onOpenFdeAcademy}
           className="p-1.5 hover:bg-cyan-950/60 hover:text-cyan-300 rounded-lg transition-colors flex items-center gap-1"

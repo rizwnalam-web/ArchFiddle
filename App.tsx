@@ -18,7 +18,9 @@ import { RoadmapView } from './components/RoadmapView';
 import { CareerPathModal } from './components/CareerPathModal';
 import { ArchitectureComparisonReportModal } from './components/ArchitectureComparisonReportModal';
 import { FdeRoadmapModal } from './components/FdeRoadmapModal';
+import { ArchitecturePlaygroundModal } from './components/ArchitecturePlaygroundModal';
 import { ArchitectureSkeletonViewer } from './components/ArchitectureSkeletonViewer';
+import { ArchitectureDeepDiveSection } from './components/ArchitectureDeepDiveSection';
 import { FloatingAiAssistant } from './components/FloatingAiAssistant';
 import { HeaderNav } from './components/HeaderNav';
 import { ArchitectureSidebar } from './components/ArchitectureSidebar';
@@ -117,8 +119,14 @@ const App = () => {
   // Forward Deployed Engineering (FDE) Academy & Certification State
   const [showFdeAcademy, setShowFdeAcademy] = useState(false);
 
+  // Architecture Playground Modal State
+  const [showPlaygroundModal, setShowPlaygroundModal] = useState(false);
+
   // Architecture Development Starter Skeletons Modal State
   const [showStarterTemplatesModal, setShowStarterTemplatesModal] = useState(false);
+
+  // Main Architecture View Mode: 'details' | 'overview' | 'explorer' | 'unified'
+  const [mainViewMode, setMainViewMode] = useState<'details' | 'overview' | 'explorer' | 'unified'>('details');
 
   // Global Search Query State
   const [searchQuery, setSearchQuery] = useState('');
@@ -179,6 +187,7 @@ const App = () => {
       
       {/* Top Header Navigation with Complete Dropdown Menus, Search & Fast Launchers */}
       <HeaderNav
+        onOpenPlayground={() => setShowPlaygroundModal(true)}
         onOpenFdeAcademy={() => setShowFdeAcademy(true)}
         onOpenQuiz={(defArch, scp) => handleOpenQuiz(defArch || selectedArchId, scp || 'all')}
         onOpenCareerPath={() => setShowCareerPathModal(true)}
@@ -235,6 +244,7 @@ const App = () => {
             onToggleCompareList={toggleCompareList}
             onOpenComparison={handleOpenComparison}
             
+            onOpenPlayground={() => setShowPlaygroundModal(true)}
             onOpenFdeAcademy={() => setShowFdeAcademy(true)}
             onOpenStarterTemplates={() => setShowStarterTemplatesModal(true)}
             onOpenQuiz={() => handleOpenQuiz(selectedArchId, 'all')}
@@ -409,207 +419,291 @@ const App = () => {
               </button>
             </div>
 
-            {/* Full Width Modules Container */}
-            <div className="space-y-8">
-              
-              {/* Diagram Section (Expanded Full Width Canvas) */}
-              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-3 shadow-xl">
-                <div className="bg-zinc-950 rounded-xl p-4 sm:p-5 h-[440px] sm:h-[480px] md:h-[520px] w-full flex flex-col">
-                  <div className="flex items-center justify-between mb-3 px-1">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
-                      <h3 className="text-xs sm:text-sm font-bold text-zinc-200 uppercase tracking-widest">
-                        Interactive Architecture Flow Diagram & Micro-Components
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-zinc-900 text-zinc-400 border border-zinc-800">
-                        Interactive SVG Canvas • Zoom & Pan Enabled
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 w-full relative overflow-hidden">
-                    <DiagramRenderer type={selectedArch.id} />
-                  </div>
-                </div>
+            {/* Primary Mode Switcher: In-Depth Details vs Overview vs Project Explorer vs All */}
+            <div className="bg-zinc-900/90 border border-zinc-800 p-1.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-lg">
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                <button
+                  onClick={() => setMainViewMode('details')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    mainViewMode === 'details'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>🔬 In-Depth Details & Deep-Dive</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-200 border border-blue-400/30">
+                    Primary
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setMainViewMode('overview')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    mainViewMode === 'overview'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <Workflow className="w-3.5 h-3.5" />
+                  <span>🎯 Architecture Overview & Flow Canvas</span>
+                </button>
+
+                <button
+                  onClick={() => setMainViewMode('explorer')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    mainViewMode === 'explorer'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/40'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <FolderTree className="w-3.5 h-3.5" />
+                  <span>💻 Multi-Language Code Explorer</span>
+                </button>
+
+                <button
+                  onClick={() => setMainViewMode('unified')}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                    mainViewMode === 'unified'
+                      ? 'bg-zinc-700 text-white shadow-md'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                  }`}
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                  <span>📑 Unified View (All)</span>
+                </button>
               </div>
 
-              {/* Estimation & Capacity Planning Section (4-Column Full-Width Grid on Desktop) */}
-              <section className="bg-zinc-900/40 p-5 sm:p-6 rounded-2xl border border-zinc-800/80 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-pink-500 rounded-full" />
-                    <span>Estimation & Capacity Planning</span>
-                  </h3>
-                  <button
-                    onClick={() => setShowCostEstimator(true)}
-                    className="px-3.5 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
-                  >
-                    <DollarSign className="w-3.5 h-3.5" />
-                    <span>Estimate Cloud Cost</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
-                  
-                  {/* Development Speed */}
-                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-zinc-400 uppercase">Dev Speed</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        est.devSpeed === 'Rapid' ? 'bg-green-950 text-green-300 border border-green-800' :
-                        est.devSpeed === 'Moderate' ? 'bg-yellow-950 text-yellow-300 border border-yellow-800' :
-                        'bg-red-950 text-red-300 border border-red-800'
-                      }`}>{est.devSpeed}</span>
-                    </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed mt-1">{est.devSpeedDesc}</p>
-                  </div>
-
-                  {/* Infrastructure Cost */}
-                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-zinc-400 uppercase">Infra Cost</span>
-                      <span className="text-xs font-bold text-zinc-300">{est.infraCost}</span>
-                    </div>
-                    <div className="flex gap-1 my-2">
-                      {['Low', 'Medium', 'High', 'Variable'].map((lvl, idx) => {
-                        const active = lvl === est.infraCost || (est.infraCost === 'Variable' && idx === 3);
-                        return <div key={lvl} className={`h-1.5 flex-1 rounded-full ${active ? 'bg-blue-500' : 'bg-zinc-800'}`}></div>;
-                      })}
-                    </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed">{est.infraCostDesc}</p>
-                  </div>
-
-                  {/* Team Size */}
-                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
-                    <span className="text-xs font-bold text-zinc-400 uppercase block">Recommended Team Size</span>
-                    <div className="flex items-center gap-2 text-sm text-zinc-200 font-semibold pt-1">
-                      <Briefcase className="w-4 h-4 text-zinc-500" />
-                      <span>{est.teamSize}</span>
-                    </div>
-                  </div>
-
-                  {/* Complexity Score */}
-                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-zinc-400 uppercase">Complexity Score</span>
-                      <span className="text-xs font-bold text-zinc-300 font-mono">{est.complexityScore}/10</span>
-                    </div>
-                    <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden mt-2">
-                      <div 
-                        className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" 
-                        style={{ width: `${est.complexityScore * 10}%` }}
-                      />
-                    </div>
-                  </div>
-
-                </div>
-              </section>
-
-              {/* Deep Dive Description */}
-              <section className="space-y-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span className="w-1.5 h-5 bg-purple-500 rounded-full" />
-                  <span>Deep Dive Description & Architectural Realities</span>
-                </h3>
-                <div className="text-zinc-300 leading-7 bg-zinc-900/40 p-6 rounded-2xl border border-zinc-800/80 whitespace-pre-line text-sm sm:text-base">
-                  {selectedArch.description}
-                </div>
-              </section>
-
-              {/* Use Cases & Prerequisites (2-Column Grid) */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <section className="space-y-2">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span className="w-1.5 h-4 bg-green-500 rounded-full" />
-                    <span>Target Use Cases</span>
-                  </h3>
-                  <div className="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 text-zinc-300 text-sm min-h-[100px] leading-relaxed">
-                    {selectedArch.useCase}
-                  </div>
-                </section>
-
-                <section className="space-y-2">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
-                    <span>Prerequisites & Foundations</span>
-                  </h3>
-                  <ul className="space-y-2.5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 min-h-[100px]">
-                    {selectedArch.prerequisites.map((req, i) => (
-                      <li key={i} className="flex items-start gap-2 text-zinc-300 text-xs sm:text-sm">
-                        <span className="text-orange-400 font-bold mt-0.5">▹</span> 
-                        <span>{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+              <div className="hidden lg:flex items-center gap-2 text-xs text-zinc-400 px-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Active Spec: <strong className="text-zinc-200">{selectedArch.title}</strong></span>
               </div>
+            </div>
 
-              {/* Technology Stack */}
-              <section className="space-y-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <span className="w-1.5 h-4 bg-blue-500 rounded-full" />
-                  <span>Standard Technology Stack & Toolchain</span>
-                </h3>
-                <div className="flex flex-wrap gap-2.5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80">
-                  {selectedArch.technologyStack.map((tech, i) => (
+            {/* View Mode 1: IN-DEPTH DETAILS (DEEP-DIVE PRIMARY SPEC) */}
+            {(mainViewMode === 'details' || mainViewMode === 'unified') && (
+              <div className="space-y-6">
+                <ArchitectureDeepDiveSection
+                  architecture={selectedArch}
+                  onOpenProjectExplorer={() => setMainViewMode('explorer')}
+                  onOpenPlayground={() => setShowPlaygroundModal(true)}
+                />
+              </div>
+            )}
+
+            {/* View Mode 2: ARCHITECTURE OVERVIEW & CANVAS */}
+            {(mainViewMode === 'overview' || mainViewMode === 'unified') && (
+              <div className="space-y-8">
+                
+                {/* Diagram Section (Expanded Full Width Canvas) */}
+                <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-3 shadow-xl">
+                  <div className="bg-zinc-950 rounded-xl p-4 sm:p-5 h-[440px] sm:h-[480px] md:h-[520px] w-full flex flex-col">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+                        <h3 className="text-xs sm:text-sm font-bold text-zinc-200 uppercase tracking-widest">
+                          Interactive Architecture Flow Diagram & Micro-Components
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowPlaygroundModal(true)}
+                          className="px-2.5 py-1 rounded-md bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-600/50 text-[10px] font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                        >
+                          <Sparkles className="w-3 h-3 text-indigo-400" />
+                          <span>Simulate in Playground</span>
+                        </button>
+                        <span className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-zinc-900 text-zinc-400 border border-zinc-800">
+                          Interactive SVG Canvas • Zoom & Pan Enabled
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1 w-full relative overflow-hidden">
+                      <DiagramRenderer type={selectedArch.id} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Estimation & Capacity Planning Section (4-Column Full-Width Grid on Desktop) */}
+                <section className="bg-zinc-900/40 p-5 sm:p-6 rounded-2xl border border-zinc-800/80 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span className="w-1.5 h-5 bg-pink-500 rounded-full" />
+                      <span>Estimation & Capacity Planning</span>
+                    </h3>
                     <button
-                      key={i}
-                      onClick={() => setSearchQuery(tech)}
-                      className="px-3.5 py-2 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 rounded-xl text-xs font-semibold hover:border-blue-500 transition-colors flex items-center gap-1.5 shadow-sm"
-                      title={`Search tech ${tech}`}
+                      onClick={() => setShowCostEstimator(true)}
+                      className="px-3.5 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
                     >
-                      <span>{tech}</span>
+                      <DollarSign className="w-3.5 h-3.5" />
+                      <span>Estimate Cloud Cost</span>
                     </button>
-                  ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
+                    
+                    {/* Development Speed */}
+                    <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-zinc-400 uppercase">Dev Speed</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          est.devSpeed === 'Rapid' ? 'bg-green-950 text-green-300 border border-green-800' :
+                          est.devSpeed === 'Moderate' ? 'bg-yellow-950 text-yellow-300 border border-yellow-800' :
+                          'bg-red-950 text-red-300 border border-red-800'
+                        }`}>{est.devSpeed}</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 leading-relaxed mt-1">{est.devSpeedDesc}</p>
+                    </div>
+
+                    {/* Infrastructure Cost */}
+                    <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-zinc-400 uppercase">Infra Cost</span>
+                        <span className="text-xs font-bold text-zinc-300">{est.infraCost}</span>
+                      </div>
+                      <div className="flex gap-1 my-2">
+                        {['Low', 'Medium', 'High', 'Variable'].map((lvl, idx) => {
+                          const active = lvl === est.infraCost || (est.infraCost === 'Variable' && idx === 3);
+                          return <div key={lvl} className={`h-1.5 flex-1 rounded-full ${active ? 'bg-blue-500' : 'bg-zinc-800'}`}></div>;
+                        })}
+                      </div>
+                      <p className="text-xs text-zinc-400 leading-relaxed">{est.infraCostDesc}</p>
+                    </div>
+
+                    {/* Team Size */}
+                    <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                      <span className="text-xs font-bold text-zinc-400 uppercase block">Recommended Team Size</span>
+                      <div className="flex items-center gap-2 text-sm text-zinc-200 font-semibold pt-1">
+                        <Briefcase className="w-4 h-4 text-zinc-500" />
+                        <span>{est.teamSize}</span>
+                      </div>
+                    </div>
+
+                    {/* Complexity Score */}
+                    <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-zinc-400 uppercase">Complexity Score</span>
+                        <span className="text-xs font-bold text-zinc-300 font-mono">{est.complexityScore}/10</span>
+                      </div>
+                      <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden mt-2">
+                        <div 
+                          className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" 
+                          style={{ width: `${est.complexityScore * 10}%` }}
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+                </section>
+
+                {/* Deep Dive Description */}
+                <section className="space-y-3">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-5 bg-purple-500 rounded-full" />
+                    <span>Architectural Realities & Trade-Offs</span>
+                  </h3>
+                  <div className="text-zinc-300 leading-7 bg-zinc-900/40 p-6 rounded-2xl border border-zinc-800/80 whitespace-pre-line text-sm sm:text-base">
+                    {selectedArch.description}
+                  </div>
+                </section>
+
+                {/* Use Cases & Prerequisites (2-Column Grid) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span className="w-1.5 h-4 bg-green-500 rounded-full" />
+                      <span>Target Use Cases</span>
+                    </h3>
+                    <div className="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 text-zinc-300 text-sm min-h-[100px] leading-relaxed">
+                      {selectedArch.useCase}
+                    </div>
+                  </section>
+
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                      <span>Prerequisites & Foundations</span>
+                    </h3>
+                    <ul className="space-y-2.5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80 min-h-[100px]">
+                      {selectedArch.prerequisites.map((req, i) => (
+                        <li key={i} className="flex items-start gap-2 text-zinc-300 text-xs sm:text-sm">
+                          <span className="text-orange-400 font-bold mt-0.5">▹</span> 
+                          <span>{req}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 </div>
-              </section>
 
-              {/* Pros and Cons (2-Column Grid) */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <section className="space-y-2">
-                  <h3 className="text-xs font-bold text-green-400 uppercase tracking-wider flex items-center gap-2">
-                    <span className="p-1 bg-green-500/20 rounded">✓</span>
-                    <span>Architectural Strengths (Pros)</span>
+                {/* Technology Stack */}
+                <section className="space-y-3">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-blue-500 rounded-full" />
+                    <span>Standard Technology Stack & Toolchain</span>
                   </h3>
-                  <ul className="space-y-2.5 bg-zinc-900/30 p-5 rounded-2xl border border-zinc-800/60">
-                    {selectedArch.pros.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-zinc-300 text-xs sm:text-sm">
-                        <span className="text-green-500 font-bold">✓</span> 
-                        <span>{item}</span>
-                      </li>
+                  <div className="flex flex-wrap gap-2.5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800/80">
+                    {selectedArch.technologyStack.map((tech, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSearchQuery(tech)}
+                        className="px-3.5 py-2 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 rounded-xl text-xs font-semibold hover:border-blue-500 transition-colors flex items-center gap-1.5 shadow-sm"
+                        title={`Search tech ${tech}`}
+                      >
+                        <span>{tech}</span>
+                      </button>
                     ))}
-                  </ul>
+                  </div>
                 </section>
 
-                <section className="space-y-2">
-                  <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
-                    <span className="p-1 bg-red-500/20 rounded">✕</span>
-                    <span>Trade-Offs & Challenges (Cons)</span>
-                  </h3>
-                  <ul className="space-y-2.5 bg-zinc-900/30 p-5 rounded-2xl border border-zinc-800/60">
-                    {selectedArch.cons.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-zinc-400 text-xs sm:text-sm">
-                        <span className="text-red-500 font-bold">✕</span> 
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+                {/* Pros and Cons (2-Column Grid) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-bold text-green-400 uppercase tracking-wider flex items-center gap-2">
+                      <span className="p-1 bg-green-500/20 rounded">✓</span>
+                      <span>Architectural Strengths (Pros)</span>
+                    </h3>
+                    <ul className="space-y-2.5 bg-zinc-900/30 p-5 rounded-2xl border border-zinc-800/60">
+                      {selectedArch.pros.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-zinc-300 text-xs sm:text-sm">
+                          <span className="text-green-500 font-bold">✓</span> 
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                      <span className="p-1 bg-red-500/20 rounded">✕</span>
+                      <span>Trade-Offs & Challenges (Cons)</span>
+                    </h3>
+                    <ul className="space-y-2.5 bg-zinc-900/30 p-5 rounded-2xl border border-zinc-800/60">
+                      {selectedArch.cons.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-zinc-400 text-xs sm:text-sm">
+                          <span className="text-red-500 font-bold">✕</span> 
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+
               </div>
+            )}
 
-              {/* Architecture Development Starter Skeleton & Code Scaffolding */}
-              <section className="space-y-4 pt-6 border-t border-zinc-800/80">
+            {/* View Mode 3: MULTI-LANGUAGE CODE EXPLORER & STARTER TEMPLATES */}
+            {(mainViewMode === 'explorer' || mainViewMode === 'unified') && (
+              <section className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-blue-500 rounded-full" />
+                    <span className="w-1.5 h-5 bg-emerald-500 rounded-full" />
                     <h3 className="text-base font-bold text-white">
-                      Development Starter Templates & Code Skeletons
+                      Multi-Language Project Explorer & Boilerplate Scaffolding
                     </h3>
                   </div>
                   <button
                     onClick={() => setShowStarterTemplatesModal(true)}
-                    className="px-3.5 py-1.5 bg-blue-950/80 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                    className="px-3.5 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
                   >
                     <Code2 className="w-3.5 h-3.5" />
                     <span>Open Full Screen Studio</span>
@@ -621,8 +715,7 @@ const App = () => {
                   onSelectArchitecture={(id) => setSelectedArchId(id)}
                 />
               </section>
-
-            </div>
+            )}
 
           </div>
         </main>
@@ -773,6 +866,17 @@ const App = () => {
           isModal={true}
           onClose={() => setShowStarterTemplatesModal(false)}
           onSelectArchitecture={(id) => setSelectedArchId(id)}
+        />
+      )}
+
+      {/* Architecture Playground Modal (Interactive Canvas & Live Simulation) */}
+      {showPlaygroundModal && (
+        <ArchitecturePlaygroundModal
+          onClose={() => setShowPlaygroundModal(false)}
+          onAskAI={(prompt) => {
+            setAiCoachPrompt(prompt);
+            setShowAiAssistantModal(true);
+          }}
         />
       )}
 

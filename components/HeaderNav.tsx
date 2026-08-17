@@ -34,6 +34,7 @@ import { ArchType, ArchCategory } from '../types';
 
 interface HeaderNavProps {
   // Navigation trigger callbacks
+  onOpenPlayground: () => void;
   onOpenFdeAcademy: () => void;
   onOpenQuiz: (defaultArch?: ArchType, scope?: 'all' | 'favorites' | 'current' | 'solid') => void;
   onOpenCareerPath: () => void;
@@ -67,6 +68,7 @@ interface HeaderNavProps {
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
+  onOpenPlayground,
   onOpenFdeAcademy,
   onOpenQuiz,
   onOpenCareerPath,
@@ -294,6 +296,29 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 <button
                   onClick={() => {
                     setActiveDropdown(null);
+                    onOpenPlayground();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-800/80 transition-colors flex items-start gap-2.5 group bg-indigo-950/30 border border-indigo-800/40"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-indigo-950 border border-indigo-600 flex items-center justify-center text-indigo-300 shrink-0 group-hover:scale-105 transition-transform shadow-md shadow-indigo-950/60">
+                    <Sparkles className="w-4 h-4 text-indigo-300" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>Architecture Playground</span>
+                      <span className="px-1 py-0.2 rounded bg-indigo-900 text-indigo-200 text-[9px] font-mono">
+                        Live Sim
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
+                      Drag-and-drop canvas, live packet flow & fault injection.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveDropdown(null);
                     onOpenComparisonReport();
                   }}
                   className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-800/80 transition-colors flex items-start gap-2.5 group"
@@ -497,6 +522,18 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
           {/* Quick Direct Buttons */}
           <button
+            onClick={onOpenPlayground}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md shadow-indigo-950/60 flex items-center gap-1.5 transition-all transform active:scale-95 shrink-0 border border-indigo-400/30"
+            title="Open Interactive Architecture Playground & Data Flow Simulator"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-200 animate-pulse" />
+            <span>Playground</span>
+            <span className="px-1 py-0.2 bg-indigo-950 text-indigo-200 rounded text-[9px] font-mono border border-indigo-400/40">
+              Live
+            </span>
+          </button>
+
+          <button
             onClick={onOpenFdeAcademy}
             className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-950/50 flex items-center gap-1.5 transition-all transform active:scale-95 shrink-0"
             title="Open Forward Deployed Engineering Academy & Certification"
@@ -615,6 +652,13 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             Tools & Engineering Blueprints
           </div>
           <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenPlayground(); }}
+              className="p-2.5 bg-indigo-950/60 border border-indigo-700/80 rounded-xl text-xs font-bold text-indigo-200 flex items-center gap-2 col-span-2 shadow-md shadow-indigo-950/40"
+            >
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <span>Architecture Playground (Live Simulator)</span>
+            </button>
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenComparisonReport(); }}
               className="p-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-300 flex items-center gap-2"

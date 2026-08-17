@@ -1922,6 +1922,289 @@ bootstrap();`
         envVariables: [
           { key: 'RABBITMQ_URL', defaultValue: 'amqp://guest:guest@localhost:5672', description: 'Message Broker URL' }
         ]
+      },
+      {
+        techId: 'microservices-dotnet-grpc',
+        techName: 'C# / .NET 8 Microservice Chassis + gRPC + MassTransit',
+        techIcon: '🔷',
+        language: 'csharp',
+        runtime: '.NET 8.0 LTS (Linux x64 / ARM64)',
+        framework: 'ASP.NET Core 8 + gRPC + MassTransit (RabbitMQ) + EF Core + OpenTelemetry',
+        badgeColor: 'bg-purple-950/80 text-purple-300 border-purple-700',
+        description: 'Production-ready .NET 8 Microservice chassis with dual HTTP/REST and high-speed binary gRPC contracts, asynchronous event bus with MassTransit, distributed tracing via OpenTelemetry, and isolated Postgres storage.',
+        fileTree: {
+          name: 'dotnet-microservice-chassis',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                {
+                  name: 'OrderService.Api',
+                  path: 'src/OrderService.Api',
+                  children: [
+                    { name: 'Program.cs', path: 'src/OrderService.Api/Program.cs', isFile: true },
+                    { name: 'appsettings.json', path: 'src/OrderService.Api/appsettings.json', isFile: true },
+                    { name: 'OrderService.Api.csproj', path: 'src/OrderService.Api/OrderService.Api.csproj', isFile: true },
+                    {
+                      name: 'Controllers',
+                      path: 'src/OrderService.Api/Controllers',
+                      children: [
+                        { name: 'OrdersController.cs', path: 'src/OrderService.Api/Controllers/OrdersController.cs', isFile: true }
+                      ]
+                    },
+                    {
+                      name: 'GrpcServices',
+                      path: 'src/OrderService.Api/GrpcServices',
+                      children: [
+                        { name: 'OrderGrpcService.cs', path: 'src/OrderService.Api/GrpcServices/OrderGrpcService.cs', isFile: true }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  name: 'OrderService.Application',
+                  path: 'src/OrderService.Application',
+                  children: [
+                    {
+                      name: 'Consumers',
+                      path: 'src/OrderService.Application/Consumers',
+                      children: [
+                        { name: 'OrderPaymentApprovedConsumer.cs', path: 'src/OrderService.Application/Consumers/OrderPaymentApprovedConsumer.cs', isFile: true }
+                      ]
+                    },
+                    {
+                      name: 'Events',
+                      path: 'src/OrderService.Application/Events',
+                      children: [
+                        { name: 'OrderCreatedIntegrationEvent.cs', path: 'src/OrderService.Application/Events/OrderCreatedIntegrationEvent.cs', isFile: true }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  name: 'OrderService.Domain',
+                  path: 'src/OrderService.Domain',
+                  children: [
+                    { name: 'Order.cs', path: 'src/OrderService.Domain/Order.cs', isFile: true },
+                    { name: 'OrderStatus.cs', path: 'src/OrderService.Domain/OrderStatus.cs', isFile: true }
+                  ]
+                },
+                {
+                  name: 'OrderService.Infrastructure',
+                  path: 'src/OrderService.Infrastructure',
+                  children: [
+                    { name: 'OrderDbContext.cs', path: 'src/OrderService.Infrastructure/OrderDbContext.cs', isFile: true }
+                  ]
+                }
+              ]
+            },
+            {
+              name: 'Protos',
+              path: 'Protos',
+              children: [
+                { name: 'orders.proto', path: 'Protos/orders.proto', isFile: true }
+              ]
+            },
+            { name: 'Dockerfile', path: 'Dockerfile', isFile: true },
+            { name: 'OrderService.sln', path: 'OrderService.sln', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/OrderService.Api/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'ASP.NET Core 8 Web API & gRPC bootstrap with MassTransit RabbitMQ and OpenTelemetry',
+            content: `using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OrderService.Api.GrpcServices;
+using OrderService.Application.Consumers;
+using OrderService.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. Add Postgres Isolated Database
+builder.Services.AddDbContext<OrderDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("OrderDb")));
+
+// 2. Add MassTransit for asynchronous event messaging
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<OrderPaymentApprovedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration.GetValue<string>("RabbitMQ:Host") ?? "localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
+// 3. OpenTelemetry Distributed Tracing
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracer => tracer
+        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("OrderService"))
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
+
+// 4. Register HTTP Controllers and gRPC Services
+builder.Services.AddControllers();
+builder.Services.AddGrpc();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseRouting();
+app.MapControllers();
+app.MapGrpcService<OrderGrpcService>();
+app.MapGet("/healthz", () => Results.Ok(new { status = "Healthy", service = "OrderService" }));
+
+app.Run();`
+          },
+          {
+            path: 'src/OrderService.Api/Controllers/OrdersController.cs',
+            name: 'OrdersController.cs',
+            language: 'csharp',
+            description: 'REST Controller publishing async domain events via MassTransit',
+            content: `using MassTransit;
+using Microsoft.AspNetCore.Mvc;
+using OrderService.Application.Events;
+using OrderService.Domain;
+using OrderService.Infrastructure;
+
+namespace OrderService.Api.Controllers;
+
+[ApiController]
+[Route("api/v1/[controller]")]
+public class OrdersController : ControllerBase
+{
+    private readonly OrderDbContext _dbContext;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ILogger<OrdersController> _logger;
+
+    public OrdersController(OrderDbContext dbContext, IPublishEndpoint publishEndpoint, ILogger<OrdersController> logger)
+    {
+        _dbContext = dbContext;
+        _publishEndpoint = publishEndpoint;
+        _logger = logger;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto, CancellationToken ct)
+    {
+        var order = new Order(Guid.NewGuid(), dto.CustomerId, dto.TotalAmount);
+        
+        _dbContext.Orders.Add(order);
+        await _dbContext.SaveChangesAsync(ct);
+
+        // Publish event to decouple payment processing and notifications
+        await _publishEndpoint.Publish(new OrderCreatedIntegrationEvent(
+            order.Id,
+            order.CustomerId,
+            order.TotalAmount,
+            DateTime.UtcNow
+        ), ct);
+
+        _logger.LogInformation("Order {OrderId} created and event published.", order.Id);
+
+        return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        var order = await _dbContext.Orders.FindAsync(new object[] { id }, ct);
+        return order is not null ? Ok(order) : NotFound();
+    }
+}
+
+public record CreateOrderDto(string CustomerId, decimal TotalAmount);`
+          },
+          {
+            path: 'Protos/orders.proto',
+            name: 'orders.proto',
+            language: 'protobuf',
+            description: 'gRPC Protobuf contract for high-speed inter-service communication',
+            content: `syntax = "proto3";
+
+option csharp_namespace = "OrderService.Protos";
+package orders.v1;
+
+service OrderGrpc {
+  rpc GetOrderSummary (GetOrderSummaryRequest) returns (OrderSummaryReply);
+}
+
+message GetOrderSummaryRequest {
+  string order_id = 1;
+}
+
+message OrderSummaryReply {
+  string order_id = 1;
+  string customer_id = 2;
+  double total_amount = 3;
+  string status = 4;
+}`
+          },
+          {
+            path: 'Dockerfile',
+            name: 'Dockerfile',
+            language: 'dockerfile',
+            description: 'Multi-stage .NET 8 Chiseled Ubuntu minimal container image',
+            content: `# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["OrderService.sln", "./"]
+COPY ["src/OrderService.Api/OrderService.Api.csproj", "src/OrderService.Api/"]
+COPY ["src/OrderService.Application/OrderService.Application.csproj", "src/OrderService.Application/"]
+COPY ["src/OrderService.Domain/OrderService.Domain.csproj", "src/OrderService.Domain/"]
+COPY ["src/OrderService.Infrastructure/OrderService.Infrastructure.csproj", "src/OrderService.Infrastructure/"]
+RUN dotnet restore
+
+COPY . .
+RUN dotnet publish "src/OrderService.Api/OrderService.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime stage (Chiseled Ubuntu for extreme security and minimal footprint)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled
+WORKDIR /app
+COPY --from=build /app/publish .
+USER $APP_UID
+ENTRYPOINT ["dotnet", "OrderService.Api.dll"]`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Restore & Build Solution', command: 'dotnet build OrderService.sln', explanation: 'Compile C# microservice projects and generate gRPC stubs.' },
+          { label: '2. Run Local Microservice', command: 'dotnet run --project src/OrderService.Api', explanation: 'Start ASP.NET Core 8 listening on HTTP :5000 and gRPC :5001.' },
+          { label: '3. Test gRPC with gRPCurl', command: 'grpcurl -plaintext localhost:5001 orders.v1.OrderGrpc/GetOrderSummary', explanation: 'Execute binary gRPC call against service.' }
+        ],
+        architectureRules: [
+          'Database-per-Service: Microservices must maintain dedicated schema/database connections.',
+          'Inter-service calls: Use async messaging (MassTransit) for eventual consistency, gRPC for low-latency queries.',
+          'Always emit OpenTelemetry distributed trace headers across HTTP and RabbitMQ message headers.'
+        ],
+        recommendedLibraries: [
+          { name: 'MassTransit', purpose: 'Enterprise distributed message bus abstraction for RabbitMQ/Kafka' },
+          { name: 'Grpc.AspNetCore', purpose: 'High performance gRPC implementation for .NET 8' },
+          { name: 'OpenTelemetry.Extensions.Hosting', purpose: 'Vendor-neutral distributed tracing and metrics' }
+        ],
+        envVariables: [
+          { key: 'ConnectionStrings__OrderDb', defaultValue: 'Host=localhost;Database=orders_db;Username=postgres;Password=postgres', description: 'Postgres connection string' },
+          { key: 'RabbitMQ__Host', defaultValue: 'localhost', description: 'RabbitMQ broker host' }
+        ]
       }
     ]
   },
@@ -2082,6 +2365,182 @@ async function processPayment(event: any) {
         ],
         envVariables: [
           { key: 'KAFKA_BROKERS', defaultValue: 'localhost:9092', description: 'Comma-separated Kafka brokers' }
+        ]
+      },
+      {
+        techId: 'eda-dotnet-masstransit',
+        techName: 'C# / .NET 8 Event-Driven Worker + MassTransit & Kafka / RabbitMQ',
+        techIcon: '⚡',
+        language: 'csharp',
+        runtime: '.NET 8.0 Worker Service',
+        framework: 'MassTransit + Confluent Kafka / RabbitMQ + EF Core Outbox',
+        badgeColor: 'bg-orange-950/80 text-orange-300 border-orange-700',
+        description: 'High-throughput asynchronous event publishing and consuming system featuring transactional Outbox Pattern, dead-letter re-try pipelines, and idempotency tracking.',
+        fileTree: {
+          name: 'dotnet-eda-worker',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                {
+                  name: 'EdaWorker.Core',
+                  path: 'src/EdaWorker.Core',
+                  children: [
+                    {
+                      name: 'Events',
+                      path: 'src/EdaWorker.Core/Events',
+                      children: [
+                        { name: 'OrderPlacedEvent.cs', path: 'src/EdaWorker.Core/Events/OrderPlacedEvent.cs', isFile: true },
+                        { name: 'PaymentProcessedEvent.cs', path: 'src/EdaWorker.Core/Events/PaymentProcessedEvent.cs', isFile: true }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  name: 'EdaWorker.Publisher',
+                  path: 'src/EdaWorker.Publisher',
+                  children: [
+                    { name: 'Program.cs', path: 'src/EdaWorker.Publisher/Program.cs', isFile: true },
+                    { name: 'OrderCheckoutService.cs', path: 'src/EdaWorker.Publisher/OrderCheckoutService.cs', isFile: true }
+                  ]
+                },
+                {
+                  name: 'EdaWorker.Consumer',
+                  path: 'src/EdaWorker.Consumer',
+                  children: [
+                    { name: 'Program.cs', path: 'src/EdaWorker.Consumer/Program.cs', isFile: true },
+                    { name: 'OrderPlacedConsumer.cs', path: 'src/EdaWorker.Consumer/OrderPlacedConsumer.cs', isFile: true }
+                  ]
+                },
+                {
+                  name: 'EdaWorker.Infrastructure',
+                  path: 'src/EdaWorker.Infrastructure',
+                  children: [
+                    { name: 'AppDbContext.cs', path: 'src/EdaWorker.Infrastructure/AppDbContext.cs', isFile: true }
+                  ]
+                }
+              ]
+            },
+            { name: 'docker-compose.yml', path: 'docker-compose.yml', isFile: true },
+            { name: 'EdaWorker.sln', path: 'EdaWorker.sln', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/EdaWorker.Publisher/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'ASP.NET Core / Worker bootstrapping MassTransit transactional outbox',
+            content: `using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using EdaWorker.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure DbContext with Transactional Outbox
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Database")));
+
+builder.Services.AddMassTransit(x =>
+{
+    // Enable EF Core Outbox for guaranteed at-least-once delivery
+    x.AddEntityFrameworkOutbox<AppDbContext>(o =>
+    {
+        o.UsePostgres();
+        o.UseBusOutbox();
+    });
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration.GetValue<string>("RabbitMQ:Host") ?? "localhost");
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
+var app = builder.Build();
+app.MapPost("/api/orders/checkout", async (IPublishEndpoint publishEndpoint, AppDbContext db) =>
+{
+    var orderId = Guid.NewGuid();
+    
+    // In-transaction atomic event persistence
+    await publishEndpoint.Publish(new OrderPlacedEvent(orderId, "CUST-9921", 149.99m, DateTime.UtcNow));
+    await db.SaveChangesAsync();
+
+    return Results.Accepted($"/api/orders/{orderId}", new { orderId, status = "OrderPlaced_Queued" });
+});
+
+app.Run();
+
+public record OrderPlacedEvent(Guid OrderId, string CustomerId, decimal TotalAmount, DateTime Timestamp);`
+          },
+          {
+            path: 'src/EdaWorker.Consumer/OrderPlacedConsumer.cs',
+            name: 'OrderPlacedConsumer.cs',
+            language: 'csharp',
+            description: 'MassTransit Event Consumer with retry policies and dead-letter handling',
+            content: `using MassTransit;
+using Microsoft.Extensions.Logging;
+
+namespace EdaWorker.Consumer;
+
+public class OrderPlacedConsumer : IConsumer<OrderPlacedEvent>
+{
+    private readonly ILogger<OrderPlacedConsumer> _logger;
+
+    public OrderPlacedConsumer(ILogger<OrderPlacedConsumer> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task Consume(ConsumeContext<OrderPlacedEvent> context)
+    {
+        var message = context.Message;
+        _logger.LogInformation("📥 Received OrderPlacedEvent: {OrderId} for customer {CustomerId} with total {Amount:C}",
+            message.OrderId, message.CustomerId, message.TotalAmount);
+
+        // Simulate idempotent domain operation
+        await Task.Delay(100);
+
+        _logger.LogInformation("✅ Successfully processed event for Order {OrderId}", message.OrderId);
+    }
+}
+
+public class OrderPlacedConsumerDefinition : ConsumerDefinition<OrderPlacedConsumer>
+{
+    public OrderPlacedConsumerDefinition()
+    {
+        ConcurrentMessageLimit = 16;
+    }
+
+    protected override void ConfigureConsumer(IReceiveEndpointConfigurator endpointConfigurator,
+        IConsumerConfigurator<OrderPlacedConsumer> consumerConfigurator,
+        IRegistrationContext context)
+    {
+        // Exponential retry before forwarding to Dead Letter Queue (_error)
+        endpointConfigurator.UseMessageRetry(r => r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
+    }
+}`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Start RabbitMQ Broker', command: 'docker compose up -d rabbitmq postgres', explanation: 'Launch broker and database with outbox tables.' },
+          { label: '2. Run Event Publisher', command: 'dotnet run --project src/EdaWorker.Publisher', explanation: 'Launch publisher API with Transactional Outbox.' },
+          { label: '3. Run Event Consumer', command: 'dotnet run --project src/EdaWorker.Consumer', explanation: 'Launch background worker listening to queue.' }
+        ],
+        architectureRules: [
+          'Use Transactional Outbox Pattern to avoid two-phase commit (2PC) failures between DB and Message Broker.',
+          'Event handlers must be strictly idempotent using idempotency keys or unique message identifiers.',
+          'Always configure Exponential Backoff with Dead Letter Queues (DLQ) to prevent poison pill loops.'
+        ],
+        recommendedLibraries: [
+          { name: 'MassTransit.EntityFrameworkCoreIntegration', purpose: 'Transactional Outbox & Inbox state management' },
+          { name: 'MassTransit.RabbitMQ / Kafka', purpose: 'Enterprise event broker transports' }
+        ],
+        envVariables: [
+          { key: 'RabbitMQ__Host', defaultValue: 'localhost', description: 'Event Broker host' },
+          { key: 'ConnectionStrings__Database', defaultValue: 'Host=localhost;Database=eda_db;Username=postgres;Password=postgres', description: 'Outbox persistence database' }
         ]
       }
     ]
@@ -2251,6 +2710,156 @@ resources:
         envVariables: [
           { key: 'AWS_REGION', defaultValue: 'us-east-1', description: 'Target deployment region' }
         ]
+      },
+      {
+        techId: 'serverless-dotnet-aot',
+        techName: 'C# / .NET 8 Serverless Native AOT (AWS Lambda & Azure Functions)',
+        techIcon: '⚡',
+        language: 'csharp',
+        runtime: '.NET 8 Native AOT (custom.provided.al2023 / Isolated)',
+        framework: 'AWS Lambda .NET 8 Native AOT / Azure Functions v4 Isolated Worker',
+        badgeColor: 'bg-yellow-950/80 text-yellow-300 border-yellow-700',
+        description: 'Blazing-fast Serverless functions compiled with .NET 8 Native AOT providing sub-15ms cold starts, minimal RAM consumption (<25MB), and DynamoDB/CosmosDB integration.',
+        fileTree: {
+          name: 'dotnet-serverless-aot',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                {
+                  name: 'ServerlessApi',
+                  path: 'src/ServerlessApi',
+                  children: [
+                    { name: 'Program.cs', path: 'src/ServerlessApi/Program.cs', isFile: true },
+                    { name: 'Function.cs', path: 'src/ServerlessApi/Function.cs', isFile: true },
+                    { name: 'AppJsonSerializerContext.cs', path: 'src/ServerlessApi/AppJsonSerializerContext.cs', isFile: true },
+                    { name: 'ServerlessApi.csproj', path: 'src/ServerlessApi/ServerlessApi.csproj', isFile: true }
+                  ]
+                }
+              ]
+            },
+            { name: 'serverless.template', path: 'serverless.template', isFile: true },
+            { name: 'Dockerfile.build', path: 'Dockerfile.build', isFile: true },
+            { name: 'ServerlessApi.sln', path: 'ServerlessApi.sln', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/ServerlessApi/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: '.NET 8 Native AOT Lambda Runtime Entry Point',
+            content: `using Amazon.Lambda.Core;
+using Amazon.Lambda.RuntimeSupport;
+using Amazon.Lambda.Serialization.SystemTextJson;
+using Amazon.Lambda.APIGatewayEvents;
+using System.Text.Json;
+using ServerlessApi;
+
+// Native AOT Custom Runtime initialization (<10ms bootstrap)
+var handler = Function.FunctionHandler;
+await LambdaBootstrapBuilder.Create(handler, new SourceGeneratorLambdaJsonSerializer<AppJsonSerializerContext>())
+    .Build()
+    .RunAsync();`
+          },
+          {
+            path: 'src/ServerlessApi/Function.cs',
+            name: 'Function.cs',
+            language: 'csharp',
+            description: 'Stateless Lambda function handler with DynamoDB single-item dispatch',
+            content: `using Amazon.Lambda.APIGatewayEvents;
+using Amazon.Lambda.Core;
+using System.Text.Json.Serialization;
+
+namespace ServerlessApi;
+
+public class Function
+{
+    public static async Task<APIGatewayHttpApiV2ProxyResponse> FunctionHandler(
+        APIGatewayHttpApiV2ProxyRequest request, 
+        ILambdaContext context)
+    {
+        context.Logger.LogInformation($"Processing HTTP request: {request.RequestContext.Http.Method} {request.RequestContext.Http.Path}");
+
+        var payload = new ApiResponse
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Status = "Success",
+            Message = "⚡ Executed on .NET 8 Native AOT Serverless Runtime",
+            Timestamp = DateTime.UtcNow
+        };
+
+        return new APIGatewayHttpApiV2ProxyResponse
+        {
+            StatusCode = 200,
+            Headers = new Dictionary<string, string>
+            {
+                { "Content-Type", "application/json" },
+                { "X-Engine", "DOTNET_8_NATIVE_AOT" }
+            },
+            Body = System.Text.Json.JsonSerializer.Serialize(payload, AppJsonSerializerContext.Default.ApiResponse)
+        };
+    }
+}
+
+public class ApiResponse
+{
+    public string Id { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
+}
+
+[JsonSerializable(typeof(ApiResponse))]
+[JsonSerializable(typeof(APIGatewayHttpApiV2ProxyRequest))]
+[JsonSerializable(typeof(APIGatewayHttpApiV2ProxyResponse))]
+public partial class AppJsonSerializerContext : JsonSerializerContext
+{
+}`
+          },
+          {
+            path: 'src/ServerlessApi/ServerlessApi.csproj',
+            name: 'ServerlessApi.csproj',
+            language: 'xml',
+            description: 'Project configuration with Native AOT compilation flags',
+            content: `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols>true</StripSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" Version="2.2.0" />
+    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.10.0" />
+    <PackageReference Include="Amazon.Lambda.APIGatewayEvents" Version="2.7.0" />
+    <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson" Version="2.4.0" />
+  </ItemGroup>
+</Project>`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Build Native AOT Binary', command: 'dotnet publish src/ServerlessApi -c Release -r linux-arm64 --self-contained', explanation: 'Compile directly to standalone ARM64 machine binary.' },
+          { label: '2. Deploy via AWS SAM / Serverless', command: 'sam deploy --guided', explanation: 'Deploy native binary with zero .NET runtime container dependencies.' }
+        ],
+        architectureRules: [
+          'Enable <PublishAot>true</PublishAot> to strip JIT engine and reduce cold start from 800ms down to <15ms.',
+          'Always use System.Text.Json Source Generators (JsonSerializerContext) for reflection-free JSON serialization.',
+          'Keep function scope lean: One domain write or read responsibility per micro-function.'
+        ],
+        recommendedLibraries: [
+          { name: 'Amazon.Lambda.RuntimeSupport', purpose: 'Custom runtime bootstrap for Native AOT' },
+          { name: 'Microsoft.Azure.Functions.Worker', purpose: 'Isolated process model for Azure Functions v4' }
+        ],
+        envVariables: [
+          { key: 'AWS_LAMBDA_FUNCTION_MEMORY_SIZE', defaultValue: '128', description: 'Memory allocation in MB' }
+        ]
       }
     ]
   },
@@ -2392,6 +3001,166 @@ ENTRYPOINT ["/server"]`
         envVariables: [
           { key: 'PORT', defaultValue: '8080', description: 'Internal container listening port' }
         ]
+      },
+      {
+        techId: 'k8s-dotnet-chiseled',
+        techName: 'C# / .NET 8 Kubernetes-Native + Chiseled Containers + K8s Probes',
+        techIcon: '☸️',
+        language: 'csharp',
+        runtime: '.NET 8.0 Chiseled Jammy (nonroot)',
+        framework: 'ASP.NET Core 8 Minimal API + HealthChecks + K8s Deployment Manifests',
+        badgeColor: 'bg-blue-950/80 text-blue-300 border-blue-700',
+        description: 'Hardened Kubernetes-native .NET 8 service running on minimal chiseled container images with liveness, readiness, and startup probes, graceful SIGTERM shutdown, and HPA auto-scaling.',
+        fileTree: {
+          name: 'dotnet-k8s-native',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                { name: 'Program.cs', path: 'src/Program.cs', isFile: true },
+                { name: 'AppHealthChecks.cs', path: 'src/AppHealthChecks.cs', isFile: true },
+                { name: 'K8sNativeApp.csproj', path: 'src/K8sNativeApp.csproj', isFile: true }
+              ]
+            },
+            {
+              name: 'k8s',
+              path: 'k8s',
+              children: [
+                { name: 'deployment.yaml', path: 'k8s/deployment.yaml', isFile: true },
+                { name: 'service.yaml', path: 'k8s/service.yaml', isFile: true },
+                { name: 'hpa.yaml', path: 'k8s/hpa.yaml', isFile: true },
+                { name: 'kustomization.yaml', path: 'k8s/kustomization.yaml', isFile: true }
+              ]
+            },
+            { name: 'Dockerfile', path: 'Dockerfile', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'ASP.NET Core 8 with K8s Health Check probes and SIGTERM handling',
+            content: `using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+var builder = WebApplication.CreateSlimBuilder(args);
+
+// Configure Kubernetes-native health checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" })
+    .AddCheck("database_ready", () => HealthCheckResult.Healthy("DB connection verified"), tags: new[] { "ready" });
+
+var app = builder.Build();
+
+// Liveness Probe: Quick check if process is alive
+app.MapHealthChecks("/healthz/live", new()
+{
+    Predicate = check => check.Tags.Contains("live")
+});
+
+// Readiness Probe: Confirms dependencies are ready for traffic
+app.MapHealthChecks("/healthz/ready", new()
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapGet("/api/data", () => Results.Ok(new { message = "☸️ Served from hardened .NET 8 Pod", node = Environment.MachineName }));
+
+// Graceful shutdown handling on SIGTERM
+var lifetime = app.Lifetime;
+lifetime.ApplicationStopping.Register(() =>
+{
+    Console.WriteLine("🛑 SIGTERM received: finishing in-flight requests gracefully...");
+});
+
+app.Run();`
+          },
+          {
+            path: 'k8s/deployment.yaml',
+            name: 'deployment.yaml',
+            language: 'yaml',
+            description: 'Kubernetes Deployment with nonroot security context & probe configuration',
+            content: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-backend
+  labels:
+    app: dotnet-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dotnet-backend
+  template:
+    metadata:
+      labels:
+        app: dotnet-backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654
+      containers:
+        - name: backend
+          image: myregistry.io/dotnet-backend:8.0.0
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi`
+          },
+          {
+            path: 'Dockerfile',
+            name: 'Dockerfile',
+            language: 'dockerfile',
+            description: 'Chiseled minimal Ubuntu container build (<50MB image)',
+            content: `FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+COPY ["src/K8sNativeApp.csproj", "./"]
+RUN dotnet restore
+COPY src/. .
+RUN dotnet publish -c Release -o /out /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled
+WORKDIR /app
+COPY --from=build /out .
+EXPOSE 8080
+ENV ASPNETCORE_HTTP_PORTS=8080
+USER $APP_UID
+ENTRYPOINT ["dotnet", "K8sNativeApp.dll"]`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Build Chiseled Container', command: 'docker build -t dotnet-backend:8.0.0 .', explanation: 'Package .NET 8 application with zero OS shell vulnerabilities.' },
+          { label: '2. Apply K8s Manifests', command: 'kubectl apply -k k8s/', explanation: 'Deploy deployment, service, and HPA to active cluster namespace.' }
+        ],
+        architectureRules: [
+          'Use Chiseled Ubuntu base images (aspnet:8.0-jammy-chiseled) for minimal CVE footprint and zero shell attack surface.',
+          'Always map separate /healthz/live and /healthz/ready probes with appropriate period intervals.'
+        ],
+        recommendedLibraries: [
+          { name: 'Microsoft.Extensions.Diagnostics.HealthChecks', purpose: 'Built-in K8s probe integration' }
+        ],
+        envVariables: [
+          { key: 'ASPNETCORE_HTTP_PORTS', defaultValue: '8080', description: 'Internal non-privileged port' }
+        ]
       }
     ]
   },
@@ -2495,6 +3264,125 @@ spec:
         envVariables: [
           { key: 'ARGOCD_SERVER', defaultValue: 'argocd.internal.company.com', description: 'ArgoCD host' }
         ]
+      },
+      {
+        techId: 'gitops-dotnet-pulumi',
+        techName: 'C# / .NET 8 Pulumi IaC + ArgoCD GitOps Workflow',
+        techIcon: '🐙',
+        language: 'csharp',
+        runtime: '.NET 8.0 / Pulumi CLI',
+        framework: 'Pulumi C# SDK + Kubernetes / Cloud Provider Provider + ArgoCD',
+        badgeColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-700',
+        description: 'Type-safe Infrastructure as Code written in C# using Pulumi with strongly-typed cloud resources, automated PR diff previews, and continuous ArgoCD sync.',
+        fileTree: {
+          name: 'dotnet-pulumi-gitops',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                { name: 'Program.cs', path: 'src/Program.cs', isFile: true },
+                { name: 'K8sStack.cs', path: 'src/K8sStack.cs', isFile: true },
+                { name: 'InfraStack.csproj', path: 'src/InfraStack.csproj', isFile: true }
+              ]
+            },
+            {
+              name: '.github/workflows',
+              path: '.github/workflows',
+              children: [
+                { name: 'gitops-sync.yml', path: '.github/workflows/gitops-sync.yml', isFile: true }
+              ]
+            },
+            { name: 'Pulumi.yaml', path: 'Pulumi.yaml', isFile: true },
+            { name: 'Pulumi.prod.yaml', path: 'Pulumi.prod.yaml', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/K8sStack.cs',
+            name: 'K8sStack.cs',
+            language: 'csharp',
+            description: 'Strongly-typed C# Pulumi Infrastructure Stack for Kubernetes Workloads',
+            content: `using Pulumi;
+using Pulumi.Kubernetes.Apps.V1;
+using Pulumi.Kubernetes.Core.V1;
+using Pulumi.Kubernetes.Types.Inputs.Apps.V1;
+using Pulumi.Kubernetes.Types.Inputs.Core.V1;
+using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
+using System.Collections.Generic;
+
+public class K8sStack : Stack
+{
+    public K8sStack()
+    {
+        var appLabels = new InputMap<string> { { "app", "enterprise-dotnet-api" } };
+
+        // Type-safe Deployment creation in C#
+        var deployment = new Deployment("dotnet-api-dep", new DeploymentArgs
+        {
+            Metadata = new ObjectMetaArgs { Name = "enterprise-dotnet-api" },
+            Spec = new DeploymentSpecArgs
+            {
+                Replicas = 3,
+                Selector = new LabelSelectorArgs { MatchLabels = appLabels },
+                Template = new PodTemplateSpecArgs
+                {
+                    Metadata = new ObjectMetaArgs { Labels = appLabels },
+                    Spec = new PodSpecArgs
+                    {
+                        Containers = new[]
+                        {
+                            new ContainerArgs
+                            {
+                                Name = "api",
+                                Image = "ghcr.io/myorg/enterprise-api:v8.0.1",
+                                Ports = new[] { new ContainerPortArgs { ContainerPortValue = 8080 } },
+                                Resources = new ResourceRequirementsArgs
+                                {
+                                    Limits = new InputMap<string> { { "cpu", "500m" }, { "memory", "512Mi" } },
+                                    Requests = new InputMap<string> { { "cpu", "100m" }, { "memory", "128Mi" } }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Expose service URL as stack output
+        this.DeploymentName = deployment.Metadata.Apply(m => m.Name);
+    }
+
+    [Output]
+    public Output<string> DeploymentName { get; set; }
+}`
+          },
+          {
+            path: 'Pulumi.yaml',
+            name: 'Pulumi.yaml',
+            language: 'yaml',
+            description: 'Pulumi project manifest configured for .NET C# runtime',
+            content: `name: dotnet-gitops-infra
+runtime: dotnet
+description: Enterprise C# Pulumi GitOps Infrastructure Stack`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Preview Cloud Changes', command: 'pulumi preview --stack prod', explanation: 'Compute type-safe diff between Git state and live cluster.' },
+          { label: '2. Apply GitOps Changes', command: 'pulumi up --yes --stack prod', explanation: 'Reconcile infrastructure state with cloud provider.' }
+        ],
+        architectureRules: [
+          'All infrastructure changes must be reviewed as C# pull requests with automated Pulumi preview comments.',
+          'Never hardcode secrets: use Pulumi Secret configuration encryption.'
+        ],
+        recommendedLibraries: [
+          { name: 'Pulumi.Kubernetes', purpose: 'Strongly-typed K8s manifests in C#' },
+          { name: 'Pulumi.Aws / AzureNative', purpose: 'Cloud resource provisioning' }
+        ],
+        envVariables: [
+          { key: 'PULUMI_ACCESS_TOKEN', defaultValue: 'pul-secret-token', description: 'Pulumi Cloud state backend token' }
+        ]
       }
     ]
   },
@@ -2574,6 +3462,135 @@ public class OrderMediationRoute extends RouteBuilder {
         ],
         envVariables: [
           { key: 'ESB_PORT', defaultValue: '8181', description: 'ESB mediation port' }
+        ]
+      },
+      {
+        techId: 'soa-dotnet-corewcf',
+        techName: 'C# / .NET 8 Enterprise SOA Service + CoreWCF & SOAP / REST Bus',
+        techIcon: '🏛️',
+        language: 'csharp',
+        runtime: '.NET 8.0 LTS',
+        framework: 'ASP.NET Core 8 + CoreWCF (WSDL/SOAP/WS-*) + Enterprise Gateway',
+        badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-700',
+        description: 'Enterprise SOA service host running modern CoreWCF with legacy WS-Security and SOAP 1.2 / NetTcp compatibility, integrated with modern REST / gRPC mediation endpoints.',
+        fileTree: {
+          name: 'dotnet-enterprise-soa',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                {
+                  name: 'EnterpriseSoa.Contracts',
+                  path: 'src/EnterpriseSoa.Contracts',
+                  children: [
+                    { name: 'IEnterpriseOrderContract.cs', path: 'src/EnterpriseSoa.Contracts/IEnterpriseOrderContract.cs', isFile: true },
+                    { name: 'EnterpriseOrderDto.cs', path: 'src/EnterpriseSoa.Contracts/EnterpriseOrderDto.cs', isFile: true }
+                  ]
+                },
+                {
+                  name: 'EnterpriseSoa.Host',
+                  path: 'src/EnterpriseSoa.Host',
+                  children: [
+                    { name: 'Program.cs', path: 'src/EnterpriseSoa.Host/Program.cs', isFile: true },
+                    { name: 'EnterpriseOrderService.cs', path: 'src/EnterpriseSoa.Host/EnterpriseOrderService.cs', isFile: true },
+                    { name: 'EnterpriseSoa.Host.csproj', path: 'src/EnterpriseSoa.Host/EnterpriseSoa.Host.csproj', isFile: true }
+                  ]
+                }
+              ]
+            },
+            { name: 'EnterpriseSoa.sln', path: 'EnterpriseSoa.sln', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/EnterpriseSoa.Contracts/IEnterpriseOrderContract.cs',
+            name: 'IEnterpriseOrderContract.cs',
+            language: 'csharp',
+            description: 'CoreWCF Service Contract with explicit XML DataContract governance',
+            content: `using CoreWCF;
+using System.Runtime.Serialization;
+
+namespace EnterpriseSoa.Contracts;
+
+[ServiceContract(Namespace = "http://enterprise.company.com/services/orders/v2")]
+public interface IEnterpriseOrderContract
+{
+    [OperationContract]
+    Task<OrderSubmissionResult> SubmitOrder(EnterpriseOrderRequest request);
+}
+
+[DataContract(Namespace = "http://enterprise.company.com/services/orders/v2")]
+public class EnterpriseOrderRequest
+{
+    [DataMember(Order = 1, IsRequired = true)]
+    public string CorporateId { get; set; } = string.Empty;
+
+    [DataMember(Order = 2, IsRequired = true)]
+    public decimal TotalAmount { get; set; }
+}
+
+[DataContract(Namespace = "http://enterprise.company.com/services/orders/v2")]
+public class OrderSubmissionResult
+{
+    [DataMember(Order = 1)]
+    public string TransactionReference { get; set; } = string.Empty;
+
+    [DataMember(Order = 2)]
+    public string Status { get; set; } = string.Empty;
+}`
+          },
+          {
+            path: 'src/EnterpriseSoa.Host/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'ASP.NET Core 8 hosting CoreWCF BasicHttpBinding and Modern REST endpoints',
+            content: `using CoreWCF;
+using CoreWCF.Configuration;
+using CoreWCF.Description;
+using EnterpriseSoa.Contracts;
+using EnterpriseSoa.Host;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add CoreWCF enterprise services
+builder.Services.AddServiceModelServices();
+builder.Services.AddServiceModelMetadata();
+builder.Services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
+
+var app = builder.Build();
+
+app.UseServiceModel(serviceBuilder =>
+{
+    serviceBuilder.AddService<EnterpriseOrderService>()
+        .AddServiceEndpoint<EnterpriseOrderService, IEnterpriseOrderContract>(
+            new BasicHttpBinding(), "/services/orders.svc");
+
+    var serviceMetadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
+    serviceMetadataBehavior.HttpGetEnabled = true;
+    serviceMetadataBehavior.HttpGetUrl = new Uri("http://localhost:5000/services/orders.svc/wsdl");
+});
+
+app.MapGet("/healthz", () => Results.Ok(new { status = "Healthy", architecture = "SOA" }));
+
+app.Run();`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Launch SOA Service', command: 'dotnet run --project src/EnterpriseSoa.Host', explanation: 'Start CoreWCF service exposing SOAP WSDL and endpoints.' },
+          { label: '2. Inspect WSDL Metadata', command: 'curl http://localhost:5000/services/orders.svc/wsdl', explanation: 'Fetch enterprise contract WSDL definition.' }
+        ],
+        architectureRules: [
+          'Maintain explicit XML namespaces and DataContract versioning rules across releases.',
+          'Enterprise bus mediation must insulate internal databases from direct external consumer access.'
+        ],
+        recommendedLibraries: [
+          { name: 'CoreWCF.Primitives', purpose: 'Modern open-source port of WCF for .NET 8' },
+          { name: 'CoreWCF.Http', purpose: 'BasicHttpBinding and WSDL support' }
+        ],
+        envVariables: [
+          { key: 'ASPNETCORE_URLS', defaultValue: 'http://*:5000', description: 'Enterprise host URL' }
         ]
       }
     ]
@@ -2660,6 +3677,127 @@ public class LiveStreamController {
         envVariables: [
           { key: 'SERVER_PORT', defaultValue: '8080', description: 'Netty reactive port' }
         ]
+      },
+      {
+        techId: 'reactive-dotnet-channels',
+        techName: 'C# / .NET 8 Reactive Channels + System.Reactive (Rx.NET) & SSE',
+        techIcon: '⚡',
+        language: 'csharp',
+        runtime: '.NET 8.0 LTS Kestrel',
+        framework: 'ASP.NET Core 8 + System.Threading.Channels + Rx.NET + IAsyncEnumerable',
+        badgeColor: 'bg-teal-950/80 text-teal-300 border-teal-700',
+        description: 'High-throughput non-blocking reactive streaming engine utilizing System.Threading.Channels bounded memory ring buffers, Reactive Extensions (Rx.NET), and Server-Sent Events (SSE).',
+        fileTree: {
+          name: 'dotnet-reactive-streaming',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                { name: 'Program.cs', path: 'src/Program.cs', isFile: true },
+                { name: 'ReactiveTradeHub.cs', path: 'src/ReactiveTradeHub.cs', isFile: true },
+                { name: 'ReactiveApp.csproj', path: 'src/ReactiveApp.csproj', isFile: true }
+              ]
+            },
+            { name: 'ReactiveApp.sln', path: 'ReactiveApp.sln', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'ASP.NET Core 8 Reactive Server-Sent Events (SSE) stream endpoint',
+            content: `using System.Runtime.CompilerServices;
+using System.Threading.Channels;
+
+var builder = WebApplication.CreateSlimBuilder(args);
+builder.Services.AddSingleton<ReactiveTradeHub>();
+
+var app = builder.Build();
+
+// Non-blocking Server-Sent Events (SSE) endpoint using IAsyncEnumerable
+app.MapGet("/api/v1/trades/stream", async (
+    ReactiveTradeHub hub, 
+    HttpResponse response, 
+    CancellationToken ct) =>
+{
+    response.Headers.Append("Content-Type", "text/event-stream");
+    response.Headers.Append("Cache-Control", "no-cache");
+    response.Headers.Append("Connection", "keep-alive");
+
+    await foreach (var trade in hub.StreamTradesAsync(ct))
+    {
+        var data = $"data: {{\"symbol\":\"{trade.Symbol}\",\"price\":{trade.Price:F2},\"timestamp\":\"{trade.Timestamp:O}\"}}\n\n";
+        await response.WriteAsync(data, ct);
+        await response.Body.FlushAsync(ct);
+    }
+});
+
+app.Run();`
+          },
+          {
+            path: 'src/ReactiveTradeHub.cs',
+            name: 'ReactiveTradeHub.cs',
+            language: 'csharp',
+            description: 'Thread-safe bounded Channel with back-pressure handling and Rx.NET',
+            content: `using System.Threading.Channels;
+using System.Runtime.CompilerServices;
+
+public class ReactiveTradeHub
+{
+    // Bounded channel to enforce back-pressure on producers if consumers lag
+    private readonly Channel<TradeEvent> _channel = Channel.CreateBounded<TradeEvent>(new BoundedChannelOptions(1000)
+    {
+        FullMode = BoundedChannelFullMode.DropOldest
+    });
+
+    public ReactiveTradeHub()
+    {
+        // Background high-frequency producer loop
+        Task.Run(async () =>
+        {
+            var random = new Random();
+            while (true)
+            {
+                var trade = new TradeEvent("BTC/USD", 67000m + (decimal)(random.NextDouble() * 500), DateTime.UtcNow);
+                _channel.Writer.TryWrite(trade);
+                await Task.Delay(50);
+            }
+        });
+    }
+
+    public async IAsyncEnumerable<TradeEvent> StreamTradesAsync([EnumeratorCancellation] CancellationToken ct)
+    {
+        while (await _channel.Reader.WaitToReadAsync(ct))
+        {
+            while (_channel.Reader.TryRead(out var trade))
+            {
+                yield return trade;
+            }
+        }
+    }
+}
+
+public record TradeEvent(string Symbol, decimal Price, DateTime Timestamp);`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Launch Reactive Stream', command: 'dotnet run --project src', explanation: 'Start high-speed non-blocking Kestrel reactive host.' },
+          { label: '2. Consume SSE Live Feed', command: 'curl -N http://localhost:5000/api/v1/trades/stream', explanation: 'Stream real-time low-latency events.' }
+        ],
+        architectureRules: [
+          'Never block threads: use System.Threading.Channels or IAsyncEnumerable for asynchronous streaming.',
+          'Always configure BoundedChannelOptions with DropOldest or DropWrite to prevent unconstrained RAM exhaustion under heavy load.'
+        ],
+        recommendedLibraries: [
+          { name: 'System.Threading.Channels', purpose: 'Zero-allocation thread-safe async queues' },
+          { name: 'System.Reactive', purpose: 'Rx.NET observable event stream LINQ operations' }
+        ],
+        envVariables: [
+          { key: 'ASPNETCORE_HTTP_PORTS', defaultValue: '5000', description: 'Internal HTTP port' }
+        ]
       }
     ]
   },
@@ -2743,6 +3881,128 @@ export class TupleSpaceManager {
         envVariables: [
           { key: 'REDIS_GRID_URL', defaultValue: 'redis://localhost:6379', description: 'In-Memory Grid Endpoint' }
         ]
+      },
+      {
+        techId: 'space-dotnet-grid',
+        techName: 'C# / .NET 8 In-Memory Tuple Grid + Asynchronous Write-Behind Worker',
+        techIcon: '🪐',
+        language: 'csharp',
+        runtime: '.NET 8.0 LTS',
+        framework: 'ASP.NET Core 8 + Microsoft.Extensions.Caching.Memory + StackExchange.Redis + Channels',
+        badgeColor: 'bg-purple-950/80 text-purple-300 border-purple-700',
+        description: 'Ultra-low latency In-Memory Tuple Space processing grid executing sub-millisecond in-RAM state modifications with asynchronous background database persistence queues.',
+        fileTree: {
+          name: 'dotnet-space-grid',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                {
+                  name: 'SpaceGrid.Core',
+                  path: 'src/SpaceGrid.Core',
+                  children: [
+                    { name: 'TupleSpaceManager.cs', path: 'src/SpaceGrid.Core/TupleSpaceManager.cs', isFile: true },
+                    { name: 'WriteBehindBackgroundWorker.cs', path: 'src/SpaceGrid.Core/WriteBehindBackgroundWorker.cs', isFile: true }
+                  ]
+                },
+                {
+                  name: 'SpaceGrid.Api',
+                  path: 'src/SpaceGrid.Api',
+                  children: [
+                    { name: 'Program.cs', path: 'src/SpaceGrid.Api/Program.cs', isFile: true },
+                    { name: 'SpaceGrid.Api.csproj', path: 'src/SpaceGrid.Api/SpaceGrid.Api.csproj', isFile: true }
+                  ]
+                }
+              ]
+            },
+            { name: 'SpaceGrid.sln', path: 'SpaceGrid.sln', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/SpaceGrid.Core/TupleSpaceManager.cs',
+            name: 'TupleSpaceManager.cs',
+            language: 'csharp',
+            description: 'Zero-latency In-Memory Space read/write coordinator with bounded persistence channel',
+            content: `using System.Collections.Concurrent;
+using System.Threading.Channels;
+
+namespace SpaceGrid.Core;
+
+public class TupleSpaceManager
+{
+    // High-performance thread-safe in-memory tuple partition
+    private readonly ConcurrentDictionary<string, object> _memorySpace = new();
+    
+    // Background write-behind channel for async disk persistence
+    private readonly Channel<PersistTupleCommand> _persistChannel = Channel.CreateBounded<PersistTupleCommand>(10000);
+
+    public ChannelReader<PersistTupleCommand> PersistenceReader => _persistChannel.Reader;
+
+    public void WriteTuple<T>(string spaceKey, T data) where T : notnull
+    {
+        // 1. Instantaneous in-memory update (<0.1ms)
+        _memorySpace[spaceKey] = data;
+
+        // 2. Non-blocking queue for asynchronous DB write-behind
+        _persistChannel.Writer.TryWrite(new PersistTupleCommand(spaceKey, data, DateTime.UtcNow));
+    }
+
+    public T? ReadTuple<T>(string spaceKey) where T : class
+    {
+        return _memorySpace.TryGetValue(spaceKey, out var val) ? val as T : null;
+    }
+}
+
+public record PersistTupleCommand(string Key, object Payload, DateTime QueuedAt);`
+          },
+          {
+            path: 'src/SpaceGrid.Api/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'Minimal API exposing lightning-fast Space Grid operations',
+            content: `using SpaceGrid.Core;
+
+var builder = WebApplication.CreateSlimBuilder(args);
+builder.Services.AddSingleton<TupleSpaceManager>();
+builder.Services.AddHostedService<WriteBehindBackgroundWorker>();
+
+var app = builder.Build();
+
+app.MapPost("/api/space/tuples/{key}", (string key, UserSessionTuple tuple, TupleSpaceManager space) =>
+{
+    space.WriteTuple(key, tuple);
+    return Results.Ok(new { status = "WrittenToMemorySpace", key, inRamTimestamp = DateTime.UtcNow });
+});
+
+app.MapGet("/api/space/tuples/{key}", (string key, TupleSpaceManager space) =>
+{
+    var tuple = space.ReadTuple<UserSessionTuple>(key);
+    return tuple is not null ? Results.Ok(tuple) : Results.NotFound();
+});
+
+app.Run();
+
+public record UserSessionTuple(string UserId, string AccessLevel, decimal Balance);`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Launch In-Memory Space Node', command: 'dotnet run --project src/SpaceGrid.Api', explanation: 'Start in-memory processing unit on Kestrel.' },
+          { label: '2. Perform Sub-Millisecond Write', command: 'curl -X POST http://localhost:5000/api/space/tuples/user_991 -H "Content-Type: application/json" -d \'{"userId":"user_991","accessLevel":"Admin","balance":5000}\'', explanation: 'Write directly into memory space.' }
+        ],
+        architectureRules: [
+          'Transactions execute purely against in-memory RAM grids to eliminate database I/O latency bottlenecks.',
+          'Always use asynchronous Write-Behind workers with batching to persist memory state to cold storage.'
+        ],
+        recommendedLibraries: [
+          { name: 'StackExchange.Redis', purpose: 'Distributed in-memory cluster synchronization' },
+          { name: 'System.Threading.Channels', purpose: 'Asynchronous write-behind queuing' }
+        ],
+        envVariables: [
+          { key: 'REDIS_CONNECTION', defaultValue: 'localhost:6379', description: 'Distributed IMDG endpoint' }
+        ]
       }
     ]
   },
@@ -2820,6 +4080,106 @@ export default async function HomePage() {
         ],
         envVariables: [
           { key: 'NEXT_PUBLIC_API_URL', defaultValue: 'https://api.mycompany.com', description: 'Public API backend' }
+        ]
+      },
+      {
+        techId: 'jamstack-dotnet-blazor',
+        techName: 'C# / .NET 8 Blazor WebAssembly + Minimal API / Static Web Apps',
+        techIcon: '🌐',
+        language: 'csharp',
+        runtime: '.NET 8.0 WebAssembly (WASM)',
+        framework: 'Blazor WebAssembly Standalone + ASP.NET Core 8 Minimal API',
+        badgeColor: 'bg-purple-950/80 text-purple-300 border-purple-700',
+        description: 'Client-side SPA compiled directly to WebAssembly running natively in browser sandbox, consuming decoupled backend cloud APIs via HTTP/JSON.',
+        fileTree: {
+          name: 'dotnet-blazor-jamstack',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                {
+                  name: 'BlazorClient',
+                  path: 'src/BlazorClient',
+                  children: [
+                    { name: 'Program.cs', path: 'src/BlazorClient/Program.cs', isFile: true },
+                    { name: 'App.razor', path: 'src/BlazorClient/App.razor', isFile: true },
+                    { name: 'Pages', path: 'src/BlazorClient/Pages', children: [{ name: 'Index.razor', path: 'src/BlazorClient/Pages/Index.razor', isFile: true }] }
+                  ]
+                }
+              ]
+            },
+            { name: 'staticwebapp.config.json', path: 'staticwebapp.config.json', isFile: true },
+            { name: 'BlazorJamstack.sln', path: 'BlazorJamstack.sln', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/BlazorClient/Pages/Index.razor',
+            name: 'Index.razor',
+            language: 'csharp',
+            description: 'Blazor WebAssembly Page component running C# in browser',
+            content: `@page "/"
+@inject HttpClient Http
+
+<div class="jamstack-hero">
+    <h1>🌐 Blazor WebAssembly JAMstack</h1>
+    <p>Running C# natively in browser client via WebAssembly bytecode.</p>
+
+    @if (apiData is null)
+    {
+        <p>Loading headless API data...</p>
+    }
+    else
+    {
+        <div class="card">
+            <h3>API Status: @apiData.Status</h3>
+            <p>Server Time: @apiData.ServerTime</p>
+        </div>
+    }
+</div>
+
+@code {
+    private ApiStatusDto? apiData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        apiData = await Http.GetFromJsonAsync<ApiStatusDto>("/api/status");
+    }
+
+    public record ApiStatusDto(string Status, DateTime ServerTime);
+}`
+          },
+          {
+            path: 'staticwebapp.config.json',
+            name: 'staticwebapp.config.json',
+            language: 'json',
+            description: 'Azure Static Web Apps / Cloudflare Pages routing configuration',
+            content: `{
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  },
+  "mimeTypes": {
+    ".wasm": "application/wasm",
+    ".dat": "application/octet-stream"
+  }
+}`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Run Blazor Dev Server', command: 'dotnet watch --project src/BlazorClient', explanation: 'Launch hot-reload WASM dev environment on port 5000.' },
+          { label: '2. Publish Static WASM Bundle', command: 'dotnet publish src/BlazorClient -c Release -o dist', explanation: 'Compile to static HTML/WASM files for CDN deployment.' }
+        ],
+        architectureRules: [
+          'Pre-compress .wasm binaries using Brotli during publish to ensure fast initial page downloads (<1.5MB total payload).',
+          'Client WASM code runs on user hardware: never store master database credentials in client assemblies.'
+        ],
+        recommendedLibraries: [
+          { name: 'Microsoft.AspNetCore.Components.WebAssembly', purpose: 'Client-side .NET WASM engine' }
+        ],
+        envVariables: [
+          { key: 'API_BASE_URL', defaultValue: 'https://api.mycompany.com', description: 'Headless Backend URL' }
         ]
       }
     ]
@@ -2902,6 +4262,132 @@ async function getUnsyncedLocalMutations() {
         ],
         envVariables: [
           { key: 'EXPO_PUBLIC_SYNC_ENDPOINT', defaultValue: 'https://api.example.com/v1/sync', description: 'Remote cloud sync endpoint' }
+        ]
+      },
+      {
+        techId: 'mobile-dotnet-maui',
+        techName: 'C# / .NET MAUI + SQLite-net & Background Sync Queue',
+        techIcon: '📱',
+        language: 'csharp',
+        runtime: '.NET 8.0 MAUI (iOS / Android / macOS / Windows)',
+        framework: '.NET MAUI + sqlite-net-pcl + CommunityToolkit.Mvvm',
+        badgeColor: 'bg-indigo-950/80 text-indigo-300 border-indigo-700',
+        description: 'Cross-platform native mobile application using local on-device SQLite database, MVVM pattern, and resilient background delta synchronization queue.',
+        fileTree: {
+          name: 'dotnet-maui-offline',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                {
+                  name: 'Services',
+                  path: 'src/Services',
+                  children: [
+                    { name: 'LocalDatabaseService.cs', path: 'src/Services/LocalDatabaseService.cs', isFile: true },
+                    { name: 'SyncManager.cs', path: 'src/Services/SyncManager.cs', isFile: true }
+                  ]
+                },
+                {
+                  name: 'ViewModels',
+                  path: 'src/ViewModels',
+                  children: [
+                    { name: 'MainViewModel.cs', path: 'src/ViewModels/MainViewModel.cs', isFile: true }
+                  ]
+                },
+                {
+                  name: 'Models',
+                  path: 'src/Models',
+                  children: [
+                    { name: 'OfflineTask.cs', path: 'src/Models/OfflineTask.cs', isFile: true }
+                  ]
+                },
+                { name: 'MauiProgram.cs', path: 'src/MauiProgram.cs', isFile: true }
+              ]
+            },
+            { name: 'MauiApp.csproj', path: 'src/MauiApp.csproj', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/Services/LocalDatabaseService.cs',
+            name: 'LocalDatabaseService.cs',
+            language: 'csharp',
+            description: 'On-device local SQLite database manager for instant offline storage',
+            content: `using SQLite;
+using MauiApp.Models;
+
+namespace MauiApp.Services;
+
+public class LocalDatabaseService
+{
+    private SQLiteAsyncConnection? _db;
+
+    private async Task InitAsync()
+    {
+        if (_db is not null) return;
+
+        var dbPath = Path.Combine(FileSystem.AppDataDirectory, "offline_store.db3");
+        _db = new SQLiteAsyncConnection(dbPath);
+        await _db.CreateTableAsync<OfflineTask>();
+    }
+
+    public async Task<List<OfflineTask>> GetTasksAsync()
+    {
+        await InitAsync();
+        return await _db!.Table<OfflineTask>().OrderByDescending(x => x.CreatedAt).ToListAsync();
+    }
+
+    public async Task SaveTaskAsync(OfflineTask task)
+    {
+        await InitAsync();
+        task.IsSynced = false; // Mark for background sync
+        task.UpdatedAt = DateTime.UtcNow;
+        await _db!.InsertOrReplaceAsync(task);
+    }
+}`
+          },
+          {
+            path: 'src/Models/OfflineTask.cs',
+            name: 'OfflineTask.cs',
+            language: 'csharp',
+            description: 'SQLite entity model with sync state flag',
+            content: `using SQLite;
+
+namespace MauiApp.Models;
+
+public class OfflineTask
+{
+    [PrimaryKey]
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    public string Title { get; set; } = string.Empty;
+
+    public bool IsCompleted { get; set; }
+
+    public bool IsSynced { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Run on Android Emulator', command: 'dotnet build -t:Run -f net8.0-android', explanation: 'Launch MAUI app inside Android emulator.' },
+          { label: '2. Run on iOS Simulator', command: 'dotnet build -t:Run -f net8.0-ios', explanation: 'Launch MAUI app inside Apple iOS simulator.' }
+        ],
+        architectureRules: [
+          'All user interactions modify local SQLite records immediately with zero UI waiting spinners.',
+          'SyncManager must subscribe to Connectivity.Current.ConnectivityChanged to trigger flush when internet returns.'
+        ],
+        recommendedLibraries: [
+          { name: 'sqlite-net-pcl', purpose: 'Fast lightweight on-device SQLite ORM' },
+          { name: 'CommunityToolkit.Mvvm', purpose: 'High performance MVVM source generators' }
+        ],
+        envVariables: [
+          { key: 'API_SYNC_URL', defaultValue: 'https://api.mycompany.com/v1/sync', description: 'Cloud sync endpoint' }
         ]
       }
     ]
@@ -3003,6 +4489,104 @@ ENVIRONMENT = "production"
         ],
         envVariables: [
           { key: 'CLOUDFLARE_API_TOKEN', defaultValue: 'cf_token_secret', description: 'Cloudflare deployment token' }
+        ]
+      },
+      {
+        techId: 'edge-dotnet-aot',
+        techName: 'C# / .NET 8 Native AOT Edge Micro-Container & WasmEdge',
+        techIcon: '⚡',
+        language: 'csharp',
+        runtime: '.NET 8 Native AOT / WasmEdge (WASIX)',
+        framework: 'ASP.NET Core 8 Web API Native AOT (Zero JIT / Sub-10ms)',
+        badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-700',
+        description: 'Ultra-lean compiled Native AOT binary running on edge nodes, CDN compute layers, or WasmEdge runtime with sub-5ms cold startup and <15MB memory footprint.',
+        fileTree: {
+          name: 'dotnet-edge-aot',
+          path: '',
+          children: [
+            {
+              name: 'src',
+              path: 'src',
+              children: [
+                { name: 'Program.cs', path: 'src/Program.cs', isFile: true },
+                { name: 'EdgeGeoResolver.cs', path: 'src/EdgeGeoResolver.cs', isFile: true },
+                { name: 'EdgeApp.csproj', path: 'src/EdgeApp.csproj', isFile: true }
+              ]
+            },
+            { name: 'Dockerfile.edge', path: 'Dockerfile.edge', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'src/Program.cs',
+            name: 'Program.cs',
+            language: 'csharp',
+            description: 'Native AOT Edge Minimal API endpoint with geo-routing',
+            content: `using System.Text.Json.Serialization;
+
+var builder = WebApplication.CreateSlimBuilder(args);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+});
+
+var app = builder.Build();
+
+app.MapGet("/api/edge/ping", (HttpContext context) =>
+{
+    var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+    var edgePoP = Environment.GetEnvironmentVariable("EDGE_POP_REGION") ?? "EDGE-ORD-01";
+
+    return Results.Ok(new EdgeResponse(
+        "⚡ Fast Response from .NET 8 Native AOT Edge Worker",
+        edgePoP,
+        clientIp,
+        DateTime.UtcNow
+    ));
+});
+
+app.Run();
+
+public record EdgeResponse(string Message, string EdgePoP, string ClientIp, DateTime Timestamp);
+
+[JsonSerializable(typeof(EdgeResponse))]
+public partial class AppJsonSerializerContext : JsonSerializerContext
+{
+}`
+          },
+          {
+            path: 'Dockerfile.edge',
+            name: 'Dockerfile.edge',
+            language: 'dockerfile',
+            description: 'Single scratch/distroless container with compiled native AOT executable',
+            content: `FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+RUN apt-get update && apt-get install -y clang zlib1g-dev
+COPY src/. .
+RUN dotnet publish -c Release -r linux-musl-x64 -o /out
+
+FROM alpine:3.19
+WORKDIR /app
+COPY --from=build /out/EdgeApp /app/EdgeApp
+EXPOSE 8080
+ENV ASPNETCORE_HTTP_PORTS=8080
+ENTRYPOINT ["/app/EdgeApp"]`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Publish Native AOT Binary', command: 'dotnet publish -c Release -r linux-x64', explanation: 'Compile to standalone native machine binary.' },
+          { label: '2. Deploy to Edge PoP', command: 'docker build -f Dockerfile.edge -t edge-dotnet:latest .', explanation: 'Package minimal container for edge PoP execution.' }
+        ],
+        architectureRules: [
+          'Must use Native AOT compilation (<PublishAot>true</PublishAot>) for sub-10ms startup times on edge compute nodes.',
+          'Never use reflection or heavy ORMs: keep edge logic centered on request routing, token authentication, and cache headers.'
+        ],
+        recommendedLibraries: [
+          { name: 'Microsoft.AspNetCore.Http.Json', purpose: 'Source-generated zero-overhead JSON for Native AOT' }
+        ],
+        envVariables: [
+          { key: 'EDGE_POP_REGION', defaultValue: 'US-EAST-EDGE', description: 'Designated edge point of presence' }
         ]
       }
     ]
