@@ -41,6 +41,7 @@ interface HeaderNavProps {
   // Navigation trigger callbacks
   onOpenPlayground: () => void;
   onOpenFdeAcademy: () => void;
+  onOpenPythonServerless: () => void;
   onOpenQuiz: (defaultArch?: ArchType, scope?: 'all' | 'favorites' | 'current' | 'solid') => void;
   onOpenCareerPath: () => void;
   onOpenRoadmap: () => void;
@@ -75,6 +76,7 @@ interface HeaderNavProps {
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenPlayground,
   onOpenFdeAcademy,
+  onOpenPythonServerless,
   onOpenQuiz,
   onOpenCareerPath,
   onOpenRoadmap,
@@ -344,6 +346,29 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 <button
                   onClick={() => {
                     setActiveDropdown(null);
+                    onOpenPythonServerless();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-800/80 transition-colors flex items-start gap-2.5 group bg-blue-950/40 border border-blue-800/50"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-950 border border-blue-600 flex items-center justify-center text-yellow-300 font-bold shrink-0 text-sm shadow-md shadow-blue-950/60">
+                    🐍
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>Python Serverless & AWS SDKs</span>
+                      <span className="px-1 py-0.2 rounded bg-blue-900 text-blue-200 text-[9px] font-mono">
+                        New Guide
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
+                      6-phase master guide: Python 3.12, uv, Boto3, SAM, Moto & OIDC.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveDropdown(null);
                     onOpenStarterTemplates();
                   }}
                   className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-800/80 transition-colors flex items-start gap-2.5 group"
@@ -552,6 +577,18 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </span>
           </button>
 
+          <button
+            onClick={onOpenPythonServerless}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-700 via-indigo-700 to-yellow-600 hover:from-blue-600 hover:to-yellow-500 text-white shadow-md shadow-blue-950/60 flex items-center gap-1.5 transition-all transform active:scale-95 shrink-0 border border-blue-400/30"
+            title="Open Python Serverless & AWS Cloud Solutions Blueprint"
+          >
+            <span className="text-xs">🐍</span>
+            <span>Python Serverless</span>
+            <span className="px-1 py-0.2 bg-blue-950 text-yellow-300 rounded text-[9px] font-mono border border-yellow-500/40">
+              AWS SDK
+            </span>
+          </button>
+
           {/* Favorites Filter Button with Counter */}
           <button
             onClick={onToggleFavoritesOnly}
@@ -687,6 +724,13 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             >
               <Sparkles className="w-4 h-4 text-indigo-400" />
               <span>Architecture Playground (Live Simulator)</span>
+            </button>
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenPythonServerless(); }}
+              className="p-2.5 bg-blue-950/60 border border-blue-700/80 rounded-xl text-xs font-bold text-yellow-300 flex items-center gap-2 col-span-2 shadow-md shadow-blue-950/40"
+            >
+              <span>🐍</span>
+              <span>Python Serverless & AWS SDKs Guide</span>
             </button>
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenComparisonReport(); }}

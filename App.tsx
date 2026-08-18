@@ -21,6 +21,8 @@ import { FdeRoadmapModal } from './components/FdeRoadmapModal';
 import { ArchitecturePlaygroundModal } from './components/ArchitecturePlaygroundModal';
 import { ArchitectureSkeletonViewer } from './components/ArchitectureSkeletonViewer';
 import { ArchitectureDeepDiveSection } from './components/ArchitectureDeepDiveSection';
+import { ArchitecturalRealitiesSection } from './components/ArchitecturalRealitiesSection';
+import { PythonServerlessGuideModal } from './components/PythonServerlessGuideModal';
 import { FloatingAiAssistant } from './components/FloatingAiAssistant';
 import { HeaderNav } from './components/HeaderNav';
 import { ArchitectureSidebar } from './components/ArchitectureSidebar';
@@ -155,6 +157,9 @@ const AppContent = () => {
   // Architecture Development Starter Skeletons Modal State
   const [showStarterTemplatesModal, setShowStarterTemplatesModal] = useState(false);
 
+  // Python Serverless & AWS Cloud Solutions Modal State
+  const [showPythonServerlessGuideModal, setShowPythonServerlessGuideModal] = useState(false);
+
   // Main Architecture View Mode: 'details' | 'overview' | 'explorer' | 'unified'
   const [mainViewMode, setMainViewMode] = useState<'details' | 'overview' | 'explorer' | 'unified'>('details');
 
@@ -219,6 +224,7 @@ const AppContent = () => {
       <HeaderNav
         onOpenPlayground={() => setShowPlaygroundModal(true)}
         onOpenFdeAcademy={() => setShowFdeAcademy(true)}
+        onOpenPythonServerless={() => setShowPythonServerlessGuideModal(true)}
         onOpenQuiz={(defArch, scp) => handleOpenQuiz(defArch || selectedArchId, scp || 'all')}
         onOpenCareerPath={() => setShowCareerPathModal(true)}
         onOpenRoadmap={() => setShowRoadmapView(true)}
@@ -502,6 +508,22 @@ const AppContent = () => {
                 </button>
 
                 <button
+                  onClick={() => setShowPythonServerlessGuideModal(true)}
+                  className={`py-2 px-3 border text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm group ${
+                    selectedArch.id === ArchType.Serverless
+                      ? 'bg-gradient-to-r from-blue-700/80 to-yellow-600/80 hover:from-blue-600 hover:to-yellow-500 border-yellow-400 text-yellow-100 shadow-yellow-950/40 ring-1 ring-yellow-400/40 animate-pulse'
+                      : 'bg-blue-950/40 hover:bg-blue-900/60 border-blue-600/60 text-blue-200'
+                  }`}
+                  title="Complete steps to build serverless apps & cloud solutions with Python 3.12, AWS SDKs, SAM & Moto"
+                >
+                  <span className="text-xs">🐍</span>
+                  <span>Python & AWS Guide</span>
+                  <span className="px-1 py-0.2 bg-blue-900/90 text-yellow-300 rounded text-[9px] font-mono border border-yellow-500/30">
+                    6-Step
+                  </span>
+                </button>
+
+                <button
                   onClick={() => setShowStarterTemplatesModal(true)}
                   className="py-2 px-3 bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-cyan-600/20 hover:from-blue-600/40 hover:to-cyan-600/40 border border-blue-500/40 text-blue-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm group"
                   title="Explore Starter Development Skeletons, CLI Commands & Boilerplates"
@@ -655,6 +677,12 @@ const AppContent = () => {
             {/* View Mode 1: IN-DEPTH DETAILS (DEEP-DIVE PRIMARY SPEC) */}
             {(mainViewMode === 'details' || mainViewMode === 'unified') && (
               <div className="space-y-6">
+                {/* Real-time Synced Narration & Spoken Realities Section */}
+                <ArchitecturalRealitiesSection
+                  architecture={selectedArch}
+                  onOpenAudioStudio={() => setShowAudioStudioModal(true)}
+                />
+
                 <ArchitectureDeepDiveSection
                   architecture={selectedArch}
                   onOpenProjectExplorer={() => setMainViewMode('explorer')}
@@ -768,16 +796,11 @@ const AppContent = () => {
                   </div>
                 </section>
 
-                {/* Deep Dive Description */}
-                <section className="space-y-3">
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-purple-500 rounded-full" />
-                    <span>Architectural Realities & Trade-Offs</span>
-                  </h3>
-                  <div className="text-zinc-300 leading-7 bg-zinc-900/40 p-6 rounded-2xl border border-zinc-800/80 whitespace-pre-line text-sm sm:text-base">
-                    {selectedArch.description}
-                  </div>
-                </section>
+                {/* Real-time Synced Spoken Text & Acoustic Realities Section */}
+                <ArchitecturalRealitiesSection
+                  architecture={selectedArch}
+                  onOpenAudioStudio={() => setShowAudioStudioModal(true)}
+                />
 
                 {/* Use Cases & Prerequisites (2-Column Grid) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1049,6 +1072,14 @@ const AppContent = () => {
             setAiCoachPrompt(prompt);
             setShowAiAssistantModal(true);
           }}
+        />
+      )}
+
+      {/* Python Serverless & AWS Cloud Solutions Guide Modal */}
+      {showPythonServerlessGuideModal && (
+        <PythonServerlessGuideModal
+          onClose={() => setShowPythonServerlessGuideModal(false)}
+          onOpenPlayground={() => setShowPlaygroundModal(true)}
         />
       )}
 

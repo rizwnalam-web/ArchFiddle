@@ -2860,6 +2860,267 @@ public partial class AppJsonSerializerContext : JsonSerializerContext
         envVariables: [
           { key: 'AWS_LAMBDA_FUNCTION_MEMORY_SIZE', defaultValue: '128', description: 'Memory allocation in MB' }
         ]
+      },
+      {
+        techId: 'serverless-python-aws-boto3',
+        techName: 'Python 3.12 / AWS Lambda + Boto3 + Powertools + SAM',
+        techIcon: '🐍',
+        language: 'python',
+        runtime: 'Python 3.12 (ARM64 / Graviton3)',
+        framework: 'AWS SAM + Boto3 + AWS Lambda Powertools + Pydantic v2 + Moto',
+        badgeColor: 'bg-blue-950/80 text-blue-300 border-blue-700',
+        description: 'Production-ready Python 3.12 Serverless Application with Boto3 Single-Table DynamoDB, SQS Partial Batch Failures, S3 streaming presigned URLs, structured CloudWatch logging, and Moto unit testing.',
+        fileTree: {
+          name: 'python-serverless-app',
+          path: '',
+          children: [
+            {
+              name: 'app',
+              path: 'app',
+              children: [
+                {
+                  name: 'handlers',
+                  path: 'app/handlers',
+                  children: [
+                    { name: 'orders.py', path: 'app/handlers/orders.py', isFile: true },
+                    { name: 'sqs_processor.py', path: 'app/handlers/sqs_processor.py', isFile: true }
+                  ]
+                },
+                {
+                  name: 'services',
+                  path: 'app/services',
+                  children: [
+                    { name: 'order_service.py', path: 'app/services/order_service.py', isFile: true },
+                    { name: 's3_service.py', path: 'app/services/s3_service.py', isFile: true }
+                  ]
+                },
+                {
+                  name: 'repositories',
+                  path: 'app/repositories',
+                  children: [
+                    { name: 'dynamo_repo.py', path: 'app/repositories/dynamo_repo.py', isFile: true }
+                  ]
+                },
+                {
+                  name: 'models',
+                  path: 'app/models',
+                  children: [
+                    { name: 'schemas.py', path: 'app/models/schemas.py', isFile: true }
+                  ]
+                }
+              ]
+            },
+            {
+              name: 'tests',
+              path: 'tests',
+              children: [
+                { name: 'test_orders.py', path: 'tests/test_orders.py', isFile: true }
+              ]
+            },
+            { name: 'template.yaml', path: 'template.yaml', isFile: true },
+            { name: 'pyproject.toml', path: 'pyproject.toml', isFile: true }
+          ]
+        },
+        starterFiles: [
+          {
+            path: 'app/handlers/orders.py',
+            name: 'orders.py',
+            language: 'python',
+            description: 'AWS Lambda handler with Powertools routing, tracing, and Pydantic validation',
+            content: `from aws_lambda_powertools import Logger, Tracer, Metrics
+from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
+from aws_lambda_powertools.logging import correlation_paths
+from app.models.schemas import CreateOrderRequest
+from app.services.order_service import OrderService
+from app.repositories.dynamo_repo import DynamoOrderRepository
+
+logger = Logger()
+tracer = Tracer()
+metrics = Metrics(namespace="ServerlessApp")
+app = APIGatewayHttpResolver()
+
+repo = DynamoOrderRepository()
+service = OrderService(repo=repo)
+
+@app.post("/orders")
+@tracer.capture_method
+def create_order():
+    raw_body = app.current_event.json_body
+    order_req = CreateOrderRequest.model_validate(raw_body)
+    created = service.create_order(order_req)
+    return created.model_dump(mode="json"), 201
+
+@app.get("/orders/<order_id>")
+@tracer.capture_method
+def get_order(order_id: str):
+    order = service.get_order(order_id)
+    if not order:
+        return {"error": "Order not found"}, 404
+    return order.model_dump(mode="json"), 200
+
+@logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_HTTP)
+@tracer.capture_lambda_handler
+@metrics.log_metrics(capture_cold_start_metric=True)
+def handler(event: dict, context) -> dict:
+    return app.resolve(event, context)`
+          },
+          {
+            path: 'app/repositories/dynamo_repo.py',
+            name: 'dynamo_repo.py',
+            language: 'python',
+            description: 'DynamoDB Single-Table Repository with Boto3 Resource & Transactions',
+            content: `import os
+import boto3
+from botocore.config import Config
+from botocore.exceptions import ClientError
+from app.models.schemas import OrderResponse
+from aws_lambda_powertools import Logger, Tracer
+
+logger = Logger(child=True)
+tracer = Tracer()
+
+boto_config = Config(retries={'mode': 'adaptive', 'max_attempts': 5}, max_pool_connections=25)
+dynamodb = boto3.resource('dynamodb', config=boto_config)
+TABLE_NAME = os.environ.get('ORDERS_TABLE_NAME', 'OrdersSingleTable')
+table = dynamodb.Table(TABLE_NAME)
+
+class DynamoOrderRepository:
+    @tracer.capture_method
+    def save_order(self, order: OrderResponse) -> None:
+        item = {
+            'PK': f"CUSTOMER#{order.customer_id}",
+            'SK': f"ORDER#{order.order_id}",
+            'GSI1PK': f"ORDER#{order.order_id}",
+            'GSI1SK': f"STATUS#{order.status}",
+            'order_id': order.order_id,
+            'customer_id': order.customer_id,
+            'status': order.status,
+            'items': order.items,
+            'total_amount': order.total_amount,
+            'currency': order.currency,
+            'created_at': order.created_at.isoformat(),
+            'updated_at': order.updated_at.isoformat(),
+        }
+        try:
+            table.put_item(
+                Item=item,
+                ConditionExpression="attribute_not_exists(PK) AND attribute_not_exists(SK)"
+            )
+            logger.info("Order saved to DynamoDB", extra={"order_id": order.order_id})
+        except ClientError as err:
+            if err.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                raise ValueError(f"Order {order.order_id} already exists.")
+            raise
+
+    @tracer.capture_method
+    def find_by_id(self, order_id: str):
+        response = table.query(
+            IndexName='GSI1',
+            KeyConditionExpression='GSI1PK = :gsi1pk',
+            ExpressionAttributeValues={':gsi1pk': f"ORDER#{order_id}"},
+            Limit=1
+        )
+        items = response.get('Items', [])
+        return OrderResponse.model_validate(items[0]) if items else None`
+          },
+          {
+            path: 'template.yaml',
+            name: 'template.yaml',
+            language: 'yaml',
+            description: 'AWS SAM specification with ARM64 Graviton3, HTTP API & DynamoDB',
+            content: `AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Python 3.12 Serverless Application with AWS SAM & Powertools
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 512
+    Runtime: python3.12
+    Architectures:
+      - arm64
+    Tracing: Active
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: orders-api
+        POWERTOOLS_METRICS_NAMESPACE: ProductionApp
+        LOG_LEVEL: INFO
+        ORDERS_TABLE_NAME: !Ref OrdersTable
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [Content-Type, Authorization]
+        AllowOrigins: ["*"]
+
+  OrdersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: app.handlers.orders.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+      Events:
+        ApiEvents:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL`
+          }
+        ],
+        quickStartCommands: [
+          { label: '1. Local Emulation', command: 'sam local start-api --port 3000', explanation: 'Run API Gateway and Lambda functions locally with hot reloading.' },
+          { label: '2. Run Moto Tests', command: 'uv run pytest tests/ -v --cov=app', explanation: 'Execute unit and integration tests against in-memory mocked AWS services.' },
+          { label: '3. Build & Deploy', command: 'sam build --use-container && sam deploy --guided', explanation: 'Compile C-extensions in container and deploy stack to AWS.' }
+        ],
+        architectureRules: [
+          'Target Python 3.12 on ARM64 (Graviton3) for optimal latency and price-performance.',
+          'Always use aws-lambda-powertools for structured JSON logs, X-Ray tracing, and CloudWatch EMF metrics.',
+          'Mock cloud services with Moto in pytest to ensure fast, deterministic CI execution with 0 AWS cost.'
+        ],
+        recommendedLibraries: [
+          { name: 'aws-lambda-powertools[all]', purpose: 'Structured logging, tracing, metrics, validation & idempotency' },
+          { name: 'boto3', purpose: 'Official AWS SDK for Python' },
+          { name: 'moto[all]', purpose: 'Mocking AWS services for offline unit tests' },
+          { name: 'pydantic', purpose: 'Fast data validation and settings management' }
+        ],
+        envVariables: [
+          { key: 'POWERTOOLS_SERVICE_NAME', defaultValue: 'orders-api', description: 'Application name for telemetry' },
+          { key: 'ORDERS_TABLE_NAME', defaultValue: 'OrdersTable', description: 'DynamoDB table name' }
+        ]
       }
     ]
   },
