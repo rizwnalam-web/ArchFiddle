@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArchitectureData, DataFlowStep, FailureMode, ScaleBottleneck, RealWorldCaseStudy, ArchitectureDecisionRecord } from '../types';
+import { ArchitectureData, DataFlowStep, FailureMode, ScaleBottleneck, RealWorldCaseStudy, ArchitectureDecisionRecord, CiCdSpec, CiCdPipelineTemplate } from '../types';
 import {
   Activity,
   Shield,
@@ -26,10 +26,22 @@ import {
   ChevronRight,
   Info,
   Headphones,
-  Volume2
+  Volume2,
+  Workflow,
+  Copy,
+  Check,
+  Download,
+  Search,
+  Sliders,
+  Cloud,
+  Box,
+  Radio,
+  Share2,
+  Sparkles
 } from 'lucide-react';
 import { useAudioNarration } from '../src/context/AudioNarrationContext';
 import { NarrationMode } from '../src/types/tts';
+import { DEFAULT_DOTNET_REACT_CICD_SPEC } from '../data/architectureCiCdData';
 
 interface ArchitectureDeepDiveSectionProps {
   architecture: ArchitectureData;
@@ -37,7 +49,7 @@ interface ArchitectureDeepDiveSectionProps {
   onOpenPlayground?: () => void;
 }
 
-type DeepDiveTab = 'dataflow' | 'concurrency' | 'resilience' | 'security' | 'scalability' | 'casestudies' | 'adr';
+type DeepDiveTab = 'dataflow' | 'concurrency' | 'resilience' | 'security' | 'scalability' | 'casestudies' | 'adr' | 'cicd';
 
 export const ArchitectureDeepDiveSection: React.FC<ArchitectureDeepDiveSectionProps> = ({
   architecture,
@@ -47,6 +59,10 @@ export const ArchitectureDeepDiveSection: React.FC<ArchitectureDeepDiveSectionPr
   const [activeTab, setActiveTab] = useState<DeepDiveTab>('dataflow');
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
   const [expandedFailureIndex, setExpandedFailureIndex] = useState<number | null>(0);
+  const [selectedPipelineIndex, setSelectedPipelineIndex] = useState<number>(0);
+  const [copiedYaml, setCopiedYaml] = useState<boolean>(false);
+  const [yamlSearchTerm, setYamlSearchTerm] = useState<string>('');
+  const [wrapYaml, setWrapYaml] = useState<boolean>(true);
 
   const { playArchitecture, isSupported: isTtsSupported } = useAudioNarration();
 
@@ -66,6 +82,29 @@ export const ArchitectureDeepDiveSection: React.FC<ArchitectureDeepDiveSectionPr
     );
   }
 
+  const cicdSpec: CiCdSpec = spec.ciCdSpec || DEFAULT_DOTNET_REACT_CICD_SPEC;
+  const currentPipeline: CiCdPipelineTemplate = cicdSpec.pipelines[selectedPipelineIndex] || cicdSpec.pipelines[0];
+
+  const handleCopyYaml = () => {
+    if (!currentPipeline) return;
+    navigator.clipboard.writeText(currentPipeline.yamlConfig);
+    setCopiedYaml(true);
+    setTimeout(() => setCopiedYaml(false), 2200);
+  };
+
+  const handleDownloadYaml = () => {
+    if (!currentPipeline) return;
+    const blob = new Blob([currentPipeline.yamlConfig], { type: 'text/yaml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentPipeline.fileName || 'pipeline.yml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const tabs: { id: DeepDiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'dataflow', label: '1. Request & Data Flow', icon: <Activity className="w-4 h-4" />, badge: `${spec.dataFlowSteps.length} Steps` },
     { id: 'concurrency', label: '2. Concurrency & State', icon: <Database className="w-4 h-4" /> },
@@ -73,7 +112,8 @@ export const ArchitectureDeepDiveSection: React.FC<ArchitectureDeepDiveSectionPr
     { id: 'security', label: '4. Zero-Trust Security', icon: <Lock className="w-4 h-4" /> },
     { id: 'scalability', label: '5. Scale Bottlenecks', icon: <Zap className="w-4 h-4" /> },
     { id: 'casestudies', label: '6. Enterprise Case Studies', icon: <Building2 className="w-4 h-4" />, badge: `${spec.caseStudies.length} Real` },
-    { id: 'adr', label: '7. Production ADR', icon: <FileText className="w-4 h-4" />, badge: spec.adrSpecimen.status }
+    { id: 'adr', label: '7. Production ADR', icon: <FileText className="w-4 h-4" />, badge: spec.adrSpecimen.status },
+    { id: 'cicd', label: '8. Deployment CI/CD', icon: <Workflow className="w-4 h-4" />, badge: 'GitHub & AWS' }
   ];
 
   return (
@@ -657,6 +697,323 @@ export const ArchitectureDeepDiveSection: React.FC<ArchitectureDeepDiveSectionPr
                 </span>
                 <p className="text-zinc-300">{spec.adrSpecimen.complianceNotes}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==========================================
+            TAB 8: DEPLOYMENT CI/CD
+            ========================================== */}
+        {activeTab === 'cicd' && (
+          <div className="space-y-6">
+            {/* Overview & Strategic Metrics Banner */}
+            <div className="bg-gradient-to-r from-blue-950/40 via-purple-950/30 to-zinc-900/60 p-5 rounded-xl border border-blue-800/50 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-400">
+                    <Workflow className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>Deployment CI/CD & DevOps Automation</span>
+                      <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                        {cicdSpec.deploymentModel} Deployment
+                      </span>
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Production-grade continuous integration, vulnerability scanning, and automated deployment pipelines for .NET 10 + React 19 + AWS + Snowflake.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded bg-zinc-900/90 text-zinc-300 text-xs font-mono border border-zinc-700">
+                    Target: Amazon ECS / Cloud Run
+                  </span>
+                  <button
+                    onClick={handleDownloadYaml}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download {currentPipeline.fileName}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Strategy & Rollback summary */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+                <div className="p-3 rounded-lg bg-zinc-950/80 border border-zinc-800/80">
+                  <span className="text-blue-400 font-semibold uppercase text-[10px] tracking-wider block mb-1">
+                    Deployment Strategy & Artifact Registry:
+                  </span>
+                  <p className="text-zinc-300">{cicdSpec.strategy}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-zinc-950/80 border border-zinc-800/80">
+                  <span className="text-rose-400 font-semibold uppercase text-[10px] tracking-wider block mb-1">
+                    Automated Rollback Trigger:
+                  </span>
+                  <p className="text-zinc-300">{cicdSpec.rollbackMechanism}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Provider Selector Tabs */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-zinc-800 pb-3">
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mr-2 flex items-center gap-1">
+                <Cloud className="w-3.5 h-3.5 text-blue-400" />
+                Pipeline Provider:
+              </span>
+              {cicdSpec.pipelines.map((pipeline, idx) => {
+                const isSelected = selectedPipelineIndex === idx;
+                return (
+                  <button
+                    key={pipeline.id}
+                    onClick={() => setSelectedPipelineIndex(idx)}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/50'
+                        : 'bg-zinc-900/80 text-zinc-300 hover:text-white hover:bg-zinc-800 border border-zinc-800'
+                    }`}
+                  >
+                    <span>
+                      {pipeline.provider === 'GitHub Actions' && '🐙'}
+                      {pipeline.provider === 'AWS CodePipeline' && '☁️'}
+                      {pipeline.provider === 'GitLab CI' && '🦊'}
+                      {pipeline.provider === 'Azure DevOps' && '🔷'}
+                    </span>
+                    <span>{pipeline.provider}</span>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${isSelected ? 'bg-blue-800 text-blue-100' : 'bg-zinc-800 text-zinc-400'}`}>
+                      {pipeline.fileName}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Current Pipeline Header Specs */}
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 pb-2.5">
+                <div>
+                  <span className="text-[11px] font-mono text-blue-400 font-semibold uppercase tracking-wider">
+                    Pipeline: {currentPipeline.fileName}
+                  </span>
+                  <h4 className="text-sm font-bold text-white mt-0.5">{currentPipeline.pipelineName}</h4>
+                </div>
+                <span className="px-2.5 py-1 rounded bg-zinc-800/90 text-amber-300 text-xs font-mono border border-zinc-700">
+                  Trigger: {currentPipeline.triggerEvent}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-zinc-400 font-semibold uppercase text-[10px] tracking-wider block mb-0.5">
+                    Target Tech Stack:
+                  </span>
+                  <p className="text-zinc-200 font-mono text-[11px]">{currentPipeline.targetStack}</p>
+                </div>
+                <div>
+                  <span className="text-zinc-400 font-semibold uppercase text-[10px] tracking-wider block mb-0.5">
+                    Deployment Ingress & Infrastructure Target:
+                  </span>
+                  <p className="text-zinc-200 font-mono text-[11px]">{currentPipeline.deploymentTarget}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Pipeline Stage Flow Timeline */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                  Automated Pipeline Execution Stages ({currentPipeline.keyStages.length} Phases)
+                </h4>
+                <span className="text-[11px] text-zinc-500 font-mono">
+                  Total Est. Time: ~{currentPipeline.keyStages.reduce((acc, s) => acc + parseInt(s.durationEst.split('m')[0] || '2'), 0)} mins
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                {currentPipeline.keyStages.map((stage, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 flex flex-col justify-between space-y-2 hover:border-blue-500/40 transition-all"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="w-5 h-5 rounded-full bg-blue-950 border border-blue-500/50 text-blue-400 text-[10px] font-bold font-mono flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">
+                          ⏱ {stage.durationEst}
+                        </span>
+                      </div>
+                      <h5 className="text-xs font-bold text-white line-clamp-1">{stage.name}</h5>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed line-clamp-3">
+                        {stage.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-zinc-800 flex items-center gap-1 text-[10px] text-emerald-400 font-mono">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Automated Gate</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Production YAML Configuration Viewer */}
+            <div className="rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden shadow-2xl">
+              {/* YAML Viewer Action Bar */}
+              <div className="bg-zinc-900/90 px-4 py-2.5 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-950 text-blue-300 border border-blue-800/60 flex items-center gap-1.5 font-bold">
+                    <FileText className="w-3.5 h-3.5 text-blue-400" />
+                    {currentPipeline.fileName}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-mono">
+                    YAML • {currentPipeline.yamlConfig.split('\n').length} lines
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Search Filter */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search YAML (e.g. dotnet, ecr)..."
+                      value={yamlSearchTerm}
+                      onChange={(e) => setYamlSearchTerm(e.target.value)}
+                      className="bg-zinc-950 text-zinc-200 placeholder-zinc-500 text-xs pl-8 pr-2.5 py-1 rounded-lg border border-zinc-800 focus:outline-none focus:border-blue-500 w-44 md:w-56 font-mono"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => setWrapYaml(!wrapYaml)}
+                    className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-all"
+                    title={wrapYaml ? 'Disable Word Wrap' : 'Enable Word Wrap'}
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={handleCopyYaml}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md ${
+                      copiedYaml
+                        ? 'bg-emerald-600 text-white shadow-emerald-600/30'
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
+                    }`}
+                  >
+                    {copiedYaml ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedYaml ? 'Copied YAML!' : 'Copy YAML'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadYaml}
+                    className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/20"
+                    title="Download YAML File"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Code Container */}
+              <div className="p-4 max-h-[500px] overflow-y-auto font-mono text-xs text-zinc-300 bg-zinc-950 scrollbar-thin scrollbar-thumb-zinc-700">
+                <pre className={`${wrapYaml ? 'whitespace-pre-wrap' : 'whitespace-pre'} leading-relaxed`}>
+                  {currentPipeline.yamlConfig.split('\n').map((line, lineIdx) => {
+                    const isHighlighted = yamlSearchTerm && line.toLowerCase().includes(yamlSearchTerm.toLowerCase());
+                    const isComment = line.trim().startsWith('#');
+                    const isKey = /^[a-zA-Z0-9_-]+:/.test(line.trim());
+                    const isJobOrStage = line.includes('name:') || line.includes('job:') || line.includes('stage:');
+
+                    return (
+                      <div
+                        key={lineIdx}
+                        className={`table-row ${isHighlighted ? 'bg-amber-950/50 text-amber-200 font-bold' : ''}`}
+                      >
+                        <span className="table-cell pr-4 text-right select-none text-zinc-600 text-[10px] w-8">
+                          {lineIdx + 1}
+                        </span>
+                        <span
+                          className={`table-cell ${
+                            isComment
+                              ? 'text-zinc-500 italic'
+                              : isJobOrStage
+                              ? 'text-blue-300 font-bold'
+                              : isKey
+                              ? 'text-purple-300 font-semibold'
+                              : 'text-zinc-300'
+                          }`}
+                        >
+                          {line}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </pre>
+              </div>
+            </div>
+
+            {/* Security & Quality Gates + Required Secrets Table */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Security & Quality Guardrails */}
+              <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-3">
+                <h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5" />
+                  DevOps Security & Quality Gates
+                </h4>
+                <ul className="space-y-2 text-xs text-zinc-300">
+                  {currentPipeline.securityAndQualityGates.map((gate, gIdx) => (
+                    <li key={gIdx} className="flex items-start gap-2 bg-zinc-950/60 p-2.5 rounded-lg border border-zinc-800/80">
+                      <span className="text-emerald-400 font-bold shrink-0">✔</span>
+                      <span className="leading-relaxed">{gate}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Secrets & Parameter Store Matrix */}
+              <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-3">
+                <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5" />
+                  Required Secrets & Environment Parameters
+                </h4>
+                <div className="space-y-2">
+                  {currentPipeline.environmentSecrets.map((secret, sIdx) => (
+                    <div
+                      key={sIdx}
+                      className="p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 flex items-center justify-between gap-2"
+                    >
+                      <div>
+                        <code className="text-[11px] font-mono font-bold text-amber-300">{secret.name}</code>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">{secret.purpose}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(secret.name);
+                        }}
+                        className="p-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs shrink-0"
+                        title="Copy Secret Name"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Zero-Downtime Migration & Deployment Reality Matrix */}
+            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 text-xs space-y-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                <h5 className="font-bold text-white">Production Deployment Best Practices & Architecture Realities</h5>
+              </div>
+              <p className="text-zinc-300 leading-relaxed">
+                For microservices utilizing .NET 10 Web APIs and Snowflake data warehouses, database migrations must adhere to the <strong>Expand/Contract (Parallel Run)</strong> pattern. EF Core migration bundles execute in the CI/CD pipeline against Snowflake schemas before new container tasks receive ingress traffic. Traffic shifting occurs gradually (e.g. 10% linear increments) across the AWS Application Load Balancer target groups, with automated rollback if synthetic canary probes or CloudWatch 5xx alarm rates spike above the 0.5% threshold.
+              </p>
             </div>
           </div>
         )}

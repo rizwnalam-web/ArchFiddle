@@ -11,6 +11,7 @@ export type NarrationMode =
   | 'scalability'
   | 'casestudies'
   | 'adr'
+  | 'cicd'
   | 'custom';
 export type WaveformVisualizerMode = 'bars' | 'wave' | 'ribbon' | 'circular' | 'matrix';
 export type WaveformColorTheme = 'cyan' | 'purple' | 'emerald' | 'amber' | 'rainbow';

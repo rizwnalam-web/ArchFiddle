@@ -830,6 +830,51 @@ export function buildAdrTrack(arch: ArchitectureData): AudioTrackMetadata {
 }
 
 /**
+ * 10. Specialized Pillar Track: Deployment CI/CD Automation
+ */
+export function buildCiCdTrack(arch: ArchitectureData): AudioTrackMetadata {
+  const spec = arch.deepDiveSpec;
+  const sections: AudioNarrationSection[] = [];
+
+  const text1 = cleanTextForSpeech(
+    `Deployment CI/CD Automation and DevOps Architecture for ${arch.title}. ` +
+    `Continuous Integration and Delivery pipelines automate matrix unit testing, SAST vulnerability scanning with Trivy, multi-architecture Docker container image compilation, and automated database migration execution.`
+  );
+  sections.push({
+    id: 'cicd-overview',
+    title: 'Continuous Integration & Delivery Strategy',
+    subtitle: 'Zero-Downtime Deployment',
+    text: text1,
+    sentences: splitIntoSentences(text1),
+    durationEstSeconds: estimateDurationSeconds(text1),
+  });
+
+  const text2 = cleanTextForSpeech(
+    `The pipeline configuration provides production-grade templates for GitHub Actions workflows and AWS CodePipeline build specifications. ` +
+    `For full-stack .NET and React applications, the pipeline performs parallelized testing of ASP.NET Core 10 APIs and React 19 frontends, pushes tagged images to Amazon ECR, and executes blue-green rollouts on Amazon ECS Fargate with automated rollback triggers if health check alarms fire.`
+  );
+  sections.push({
+    id: 'cicd-templates',
+    title: 'GitHub Actions & AWS CodePipeline Workflows',
+    subtitle: '.NET + React Stack Automation',
+    text: text2,
+    sentences: splitIntoSentences(text2),
+    durationEstSeconds: estimateDurationSeconds(text2),
+  });
+
+  const totalDuration = sections.reduce((acc, s) => acc + s.durationEstSeconds, 0);
+
+  return {
+    archId: arch.id,
+    title: `${arch.title}: Deployment CI/CD`,
+    category: arch.category,
+    mode: 'cicd',
+    totalDurationEstSeconds: totalDuration,
+    sections,
+  };
+}
+
+/**
  * Universal Track Builder Dispatcher
  */
 export function buildTrackForMode(arch: ArchitectureData, mode: NarrationMode = 'comprehensive'): AudioTrackMetadata {
@@ -853,6 +898,8 @@ export function buildTrackForMode(arch: ArchitectureData, mode: NarrationMode = 
       return buildCaseStudiesTrack(arch);
     case 'adr':
       return buildAdrTrack(arch);
+    case 'cicd':
+      return buildCiCdTrack(arch);
     default:
       return buildComprehensiveTrack(arch);
   }

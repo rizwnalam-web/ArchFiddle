@@ -23,6 +23,7 @@ import { ArchitectureSkeletonViewer } from './components/ArchitectureSkeletonVie
 import { ArchitectureDeepDiveSection } from './components/ArchitectureDeepDiveSection';
 import { ArchitecturalRealitiesSection } from './components/ArchitecturalRealitiesSection';
 import { PythonServerlessGuideModal } from './components/PythonServerlessGuideModal';
+import { DotnetMicroservicesSnowflakeModal } from './components/DotnetMicroservicesSnowflakeModal';
 import { FloatingAiAssistant } from './components/FloatingAiAssistant';
 import { HeaderNav } from './components/HeaderNav';
 import { ArchitectureSidebar } from './components/ArchitectureSidebar';
@@ -160,6 +161,9 @@ const AppContent = () => {
   // Python Serverless & AWS Cloud Solutions Modal State
   const [showPythonServerlessGuideModal, setShowPythonServerlessGuideModal] = useState(false);
 
+  // .NET 10 Microservices + React + Express + Snowflake Modal State
+  const [showDotnetSnowflakeModal, setShowDotnetSnowflakeModal] = useState(false);
+
   // Main Architecture View Mode: 'details' | 'overview' | 'explorer' | 'unified'
   const [mainViewMode, setMainViewMode] = useState<'details' | 'overview' | 'explorer' | 'unified'>('details');
 
@@ -225,6 +229,7 @@ const AppContent = () => {
         onOpenPlayground={() => setShowPlaygroundModal(true)}
         onOpenFdeAcademy={() => setShowFdeAcademy(true)}
         onOpenPythonServerless={() => setShowPythonServerlessGuideModal(true)}
+        onOpenDotnetMicroservices={() => setShowDotnetSnowflakeModal(true)}
         onOpenQuiz={(defArch, scp) => handleOpenQuiz(defArch || selectedArchId, scp || 'all')}
         onOpenCareerPath={() => setShowCareerPathModal(true)}
         onOpenRoadmap={() => setShowRoadmapView(true)}
@@ -1079,6 +1084,14 @@ const AppContent = () => {
       {showPythonServerlessGuideModal && (
         <PythonServerlessGuideModal
           onClose={() => setShowPythonServerlessGuideModal(false)}
+          onOpenPlayground={() => setShowPlaygroundModal(true)}
+        />
+      )}
+
+      {/* .NET 10 Microservices + Snowflake Master Guide Modal */}
+      {showDotnetSnowflakeModal && (
+        <DotnetMicroservicesSnowflakeModal
+          onClose={() => setShowDotnetSnowflakeModal(false)}
           onOpenPlayground={() => setShowPlaygroundModal(true)}
         />
       )}

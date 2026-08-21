@@ -42,6 +42,7 @@ interface HeaderNavProps {
   onOpenPlayground: () => void;
   onOpenFdeAcademy: () => void;
   onOpenPythonServerless: () => void;
+  onOpenDotnetMicroservices: () => void;
   onOpenQuiz: (defaultArch?: ArchType, scope?: 'all' | 'favorites' | 'current' | 'solid') => void;
   onOpenCareerPath: () => void;
   onOpenRoadmap: () => void;
@@ -77,6 +78,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenPlayground,
   onOpenFdeAcademy,
   onOpenPythonServerless,
+  onOpenDotnetMicroservices,
   onOpenQuiz,
   onOpenCareerPath,
   onOpenRoadmap,
@@ -369,6 +371,29 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 <button
                   onClick={() => {
                     setActiveDropdown(null);
+                    onOpenDotnetMicroservices();
+                  }}
+                  className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-800/80 transition-colors flex items-start gap-2.5 group bg-purple-950/40 border border-purple-800/50"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-purple-950 border border-purple-600 flex items-center justify-center text-purple-300 font-bold shrink-0 text-sm shadow-md shadow-purple-950/60">
+                    🔷
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>.NET 10 Microservices + Snowflake</span>
+                      <span className="px-1 py-0.2 rounded bg-purple-900 text-purple-200 text-[9px] font-mono">
+                        New Guide
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
+                      React 19 + Express BFF + .NET 10 + gRPC + MassTransit AWS SQS + EF Core Snowflake.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveDropdown(null);
                     onOpenStarterTemplates();
                   }}
                   className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-800/80 transition-colors flex items-start gap-2.5 group"
@@ -589,6 +614,18 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </span>
           </button>
 
+          <button
+            onClick={onOpenDotnetMicroservices}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-800 via-indigo-800 to-blue-700 hover:from-purple-700 hover:to-blue-600 text-white shadow-md shadow-purple-950/60 flex items-center gap-1.5 transition-all transform active:scale-95 shrink-0 border border-purple-400/30"
+            title="Open .NET 10 Microservices & Snowflake Blueprint"
+          >
+            <span className="text-xs">🔷</span>
+            <span>.NET 10 Microservices</span>
+            <span className="px-1 py-0.2 bg-purple-950 text-purple-200 rounded text-[9px] font-mono border border-purple-400/40">
+              Snowflake
+            </span>
+          </button>
+
           {/* Favorites Filter Button with Counter */}
           <button
             onClick={onToggleFavoritesOnly}
@@ -731,6 +768,13 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             >
               <span>🐍</span>
               <span>Python Serverless & AWS SDKs Guide</span>
+            </button>
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenDotnetMicroservices(); }}
+              className="p-2.5 bg-purple-950/60 border border-purple-700/80 rounded-xl text-xs font-bold text-purple-200 flex items-center gap-2 col-span-2 shadow-md shadow-purple-950/40"
+            >
+              <span>🔷</span>
+              <span>.NET 10 Microservices + Snowflake Guide</span>
             </button>
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenComparisonReport(); }}

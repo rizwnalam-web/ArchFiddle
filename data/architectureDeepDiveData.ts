@@ -1,10 +1,12 @@
 import { ArchType, DeepDiveArchitectureSpec } from '../types';
+import { DEFAULT_DOTNET_REACT_CICD_SPEC } from './architectureCiCdData';
 
 export const ARCHITECTURE_DEEP_DIVES: Record<ArchType, DeepDiveArchitectureSpec> = {
   // ==========================================
   // 1. MONOLITHIC ARCHITECTURE
   // ==========================================
   [ArchType.Monolithic]: {
+    ciCdSpec: DEFAULT_DOTNET_REACT_CICD_SPEC,
     dataFlowSteps: [
       {
         step: 1,
@@ -254,6 +256,7 @@ export const ARCHITECTURE_DEEP_DIVES: Record<ArchType, DeepDiveArchitectureSpec>
   // 3. MICROSERVICES ARCHITECTURE
   // ==========================================
   [ArchType.Microservices]: {
+    ciCdSpec: DEFAULT_DOTNET_REACT_CICD_SPEC,
     dataFlowSteps: [
       {
         step: 1,

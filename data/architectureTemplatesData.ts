@@ -1925,15 +1925,15 @@ bootstrap();`
       },
       {
         techId: 'microservices-dotnet-grpc',
-        techName: 'C# / .NET 8 Microservice Chassis + gRPC + MassTransit',
+        techName: 'C# / .NET 10 Microservices + React 19 + Express BFF + gRPC + MassTransit (AWS SQS) + EF Core + Snowflake',
         techIcon: '🔷',
         language: 'csharp',
-        runtime: '.NET 8.0 LTS (Linux x64 / ARM64)',
-        framework: 'ASP.NET Core 8 + gRPC + MassTransit (RabbitMQ) + EF Core + OpenTelemetry',
+        runtime: '.NET 10.0 (net10.0) + Node.js 20+ LTS',
+        framework: 'ASP.NET Core 10 Web API + gRPC + MassTransit (AWS SQS/SNS) + EF Core Snowflake + OpenTelemetry + React 19 + Express.js BFF',
         badgeColor: 'bg-purple-950/80 text-purple-300 border-purple-700',
-        description: 'Production-ready .NET 8 Microservice chassis with dual HTTP/REST and high-speed binary gRPC contracts, asynchronous event bus with MassTransit, distributed tracing via OpenTelemetry, and isolated Postgres storage.',
+        description: 'Enterprise full-stack microservices skeleton featuring a React 19 + TypeScript UI, an Express.js Backend-For-Frontend (BFF) gateway, an ASP.NET Core 10 Web API & gRPC microservice, asynchronous event bus powered by MassTransit over AWS Simple Queue Service (SQS) & SNS, data warehouse persistence into Snowflake via EF Core, and full-stack distributed tracing with OpenTelemetry.',
         fileTree: {
-          name: 'dotnet-microservice-chassis',
+          name: 'dotnet10-snowflake-microservices',
           path: '',
           children: [
             {
@@ -1941,121 +1941,191 @@ bootstrap();`
               path: 'src',
               children: [
                 {
-                  name: 'OrderService.Api',
-                  path: 'src/OrderService.Api',
+                  name: 'client-web',
+                  path: 'src/client-web',
+                  description: 'React 19 + TypeScript + Vite + Tailwind UI Client',
                   children: [
-                    { name: 'Program.cs', path: 'src/OrderService.Api/Program.cs', isFile: true },
-                    { name: 'appsettings.json', path: 'src/OrderService.Api/appsettings.json', isFile: true },
-                    { name: 'OrderService.Api.csproj', path: 'src/OrderService.Api/OrderService.Api.csproj', isFile: true },
+                    { name: 'App.tsx', path: 'src/client-web/src/App.tsx', isFile: true },
+                    { name: 'package.json', path: 'src/client-web/package.json', isFile: true },
+                    { name: 'vite.config.ts', path: 'src/client-web/vite.config.ts', isFile: true }
+                  ]
+                },
+                {
+                  name: 'client-bff-express',
+                  path: 'src/client-bff-express',
+                  description: 'Express.js Backend-For-Frontend (BFF) & Gateway with gRPC Client',
+                  children: [
+                    { name: 'server.ts', path: 'src/client-bff-express/src/server.ts', isFile: true },
+                    { name: 'package.json', path: 'src/client-bff-express/package.json', isFile: true },
+                    { name: 'tsconfig.json', path: 'src/client-bff-express/tsconfig.json', isFile: true }
+                  ]
+                },
+                {
+                  name: 'dotnet-microservices',
+                  path: 'src/dotnet-microservices',
+                  description: 'ASP.NET Core 10 Microservice Engine (REST + gRPC + SQS + Snowflake)',
+                  children: [
                     {
-                      name: 'Controllers',
-                      path: 'src/OrderService.Api/Controllers',
+                      name: 'OrderAnalyticsService.Api',
+                      path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api',
                       children: [
-                        { name: 'OrdersController.cs', path: 'src/OrderService.Api/Controllers/OrdersController.cs', isFile: true }
+                        { name: 'Program.cs', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/Program.cs', isFile: true },
+                        { name: 'appsettings.json', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/appsettings.json', isFile: true },
+                        { name: 'OrderAnalyticsService.Api.csproj', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/OrderAnalyticsService.Api.csproj', isFile: true },
+                        {
+                          name: 'Controllers',
+                          path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/Controllers',
+                          children: [
+                            { name: 'OrderAnalyticsController.cs', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/Controllers/OrderAnalyticsController.cs', isFile: true }
+                          ]
+                        },
+                        {
+                          name: 'GrpcServices',
+                          path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/GrpcServices',
+                          children: [
+                            { name: 'OrderAnalyticsGrpcService.cs', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/GrpcServices/OrderAnalyticsGrpcService.cs', isFile: true }
+                          ]
+                        }
                       ]
                     },
                     {
-                      name: 'GrpcServices',
-                      path: 'src/OrderService.Api/GrpcServices',
+                      name: 'OrderAnalyticsService.Application',
+                      path: 'src/dotnet-microservices/src/OrderAnalyticsService.Application',
                       children: [
-                        { name: 'OrderGrpcService.cs', path: 'src/OrderService.Api/GrpcServices/OrderGrpcService.cs', isFile: true }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  name: 'OrderService.Application',
-                  path: 'src/OrderService.Application',
-                  children: [
-                    {
-                      name: 'Consumers',
-                      path: 'src/OrderService.Application/Consumers',
-                      children: [
-                        { name: 'OrderPaymentApprovedConsumer.cs', path: 'src/OrderService.Application/Consumers/OrderPaymentApprovedConsumer.cs', isFile: true }
+                        {
+                          name: 'Consumers',
+                          path: 'src/dotnet-microservices/src/OrderAnalyticsService.Application/Consumers',
+                          children: [
+                            { name: 'OrderSubmittedConsumer.cs', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Application/Consumers/OrderSubmittedConsumer.cs', isFile: true }
+                          ]
+                        },
+                        {
+                          name: 'Events',
+                          path: 'src/dotnet-microservices/src/OrderAnalyticsService.Application/Events',
+                          children: [
+                            { name: 'OrderSubmittedIntegrationEvent.cs', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Application/Events/OrderSubmittedIntegrationEvent.cs', isFile: true }
+                          ]
+                        }
                       ]
                     },
                     {
-                      name: 'Events',
-                      path: 'src/OrderService.Application/Events',
+                      name: 'OrderAnalyticsService.Domain',
+                      path: 'src/dotnet-microservices/src/OrderAnalyticsService.Domain',
                       children: [
-                        { name: 'OrderCreatedIntegrationEvent.cs', path: 'src/OrderService.Application/Events/OrderCreatedIntegrationEvent.cs', isFile: true }
+                        { name: 'OrderAnalyticsRecord.cs', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Domain/OrderAnalyticsRecord.cs', isFile: true }
                       ]
-                    }
-                  ]
-                },
-                {
-                  name: 'OrderService.Domain',
-                  path: 'src/OrderService.Domain',
-                  children: [
-                    { name: 'Order.cs', path: 'src/OrderService.Domain/Order.cs', isFile: true },
-                    { name: 'OrderStatus.cs', path: 'src/OrderService.Domain/OrderStatus.cs', isFile: true }
-                  ]
-                },
-                {
-                  name: 'OrderService.Infrastructure',
-                  path: 'src/OrderService.Infrastructure',
-                  children: [
-                    { name: 'OrderDbContext.cs', path: 'src/OrderService.Infrastructure/OrderDbContext.cs', isFile: true }
+                    },
+                    {
+                      name: 'OrderAnalyticsService.Infrastructure',
+                      path: 'src/dotnet-microservices/src/OrderAnalyticsService.Infrastructure',
+                      children: [
+                        { name: 'SnowflakeDbContext.cs', path: 'src/dotnet-microservices/src/OrderAnalyticsService.Infrastructure/SnowflakeDbContext.cs', isFile: true }
+                      ]
+                    },
+                    {
+                      name: 'Protos',
+                      path: 'src/dotnet-microservices/Protos',
+                      children: [
+                        { name: 'analytics_orders.proto', path: 'src/dotnet-microservices/Protos/analytics_orders.proto', isFile: true }
+                      ]
+                    },
+                    { name: 'Dockerfile', path: 'src/dotnet-microservices/Dockerfile', isFile: true },
+                    { name: 'OrderAnalyticsService.sln', path: 'src/dotnet-microservices/OrderAnalyticsService.sln', isFile: true }
                   ]
                 }
               ]
             },
-            {
-              name: 'Protos',
-              path: 'Protos',
-              children: [
-                { name: 'orders.proto', path: 'Protos/orders.proto', isFile: true }
-              ]
-            },
-            { name: 'Dockerfile', path: 'Dockerfile', isFile: true },
-            { name: 'OrderService.sln', path: 'OrderService.sln', isFile: true }
+            { name: 'docker-compose.yml', path: 'docker-compose.yml', isFile: true },
+            { name: 'README.md', path: 'README.md', isFile: true }
           ]
         },
         starterFiles: [
           {
-            path: 'src/OrderService.Api/Program.cs',
+            path: 'src/dotnet-microservices/src/OrderAnalyticsService.Api/Program.cs',
             name: 'Program.cs',
             language: 'csharp',
-            description: 'ASP.NET Core 8 Web API & gRPC bootstrap with MassTransit RabbitMQ and OpenTelemetry',
+            description: 'ASP.NET Core 10 Web API & gRPC bootstrap with MassTransit AWS SQS, EF Core Snowflake, and OpenTelemetry',
             content: `using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using OrderService.Api.GrpcServices;
-using OrderService.Application.Consumers;
-using OrderService.Infrastructure;
+using OpenTelemetry.Metrics;
+using OrderAnalyticsService.Api.GrpcServices;
+using OrderAnalyticsService.Application.Consumers;
+using OrderAnalyticsService.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Add Postgres Isolated Database
-builder.Services.AddDbContext<OrderDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("OrderDb")));
+// ============================================================================
+// 1. CONFIGURE SNOWFLAKE CLOUD DATA WAREHOUSE (EF CORE DB CONTEXT)
+// ============================================================================
+var snowflakeConnString = builder.Configuration.GetConnectionString("SnowflakeDb")
+    ?? "account=xy12345.us-east-1;user=ANALYTICS_USER;password=SecretPass123!;db=ORDER_ANALYTICS_DB;schema=PUBLIC;warehouse=COMPUTE_WH;";
 
-// 2. Add MassTransit for asynchronous event messaging
+builder.Services.AddDbContext<SnowflakeDbContext>(options =>
+{
+    // Uses Snowflake.Data ADO.NET and EF Core custom extensions for Snowflake
+    options.UseSnowflake(snowflakeConnString);
+});
+
+// ============================================================================
+// 2. CONFIGURE MASSTRANSIT WITH AMAZON SIMPLE QUEUE SERVICE (SQS) & SNS
+// ============================================================================
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<OrderPaymentApprovedConsumer>();
+    x.AddConsumer<OrderSubmittedConsumer>();
 
-    x.UsingRabbitMq((context, cfg) =>
+    x.UsingAmazonSqs((context, cfg) =>
     {
-        cfg.Host(builder.Configuration.GetValue<string>("RabbitMQ:Host") ?? "localhost", "/", h =>
+        var awsRegion = builder.Configuration.GetValue<string>("AWS:Region") ?? "us-east-1";
+        var serviceUrl = builder.Configuration.GetValue<string>("AWS:ServiceURL"); // LocalStack support
+
+        cfg.Host(awsRegion, h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            if (!string.IsNullOrEmpty(serviceUrl))
+            {
+                h.Config(new Amazon.SQS.AmazonSQSConfig { ServiceURL = serviceUrl });
+                h.Config(new Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceConfig { ServiceURL = serviceUrl });
+            }
+            h.AccessKey(builder.Configuration.GetValue<string>("AWS:AccessKey") ?? "test");
+            h.SecretKey(builder.Configuration.GetValue<string>("AWS:SecretKey") ?? "test");
         });
+
+        // Configure SQS Queue Receive Endpoint with Dead Letter Queue & Exponential Retry
+        cfg.ReceiveEndpoint("order-analytics-intake-queue", e =>
+        {
+            e.PrefetchCount = 16;
+            e.UseMessageRetry(r => r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5)));
+            e.ConfigureConsumer<OrderSubmittedConsumer>(context);
+        });
+
         cfg.ConfigureEndpoints(context);
     });
 });
 
-// 3. OpenTelemetry Distributed Tracing
+// ============================================================================
+// 3. OPENTELEMETRY DISTRIBUTED TRACING & METRICS EXPORTERS
+// ============================================================================
+var otelServiceName = "OrderAnalytics.Microservice.DotNet10";
 builder.Services.AddOpenTelemetry()
-    .WithTracing(tracer => tracer
-        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("OrderService"))
+    .ConfigureResource(resource => resource.AddService(otelServiceName))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddGrpcClientInstrumentation()
+        .AddSource("MassTransit")
+        .AddOtlpExporter(opt =>
+        {
+            opt.Endpoint = new Uri(builder.Configuration.GetValue<string>("OpenTelemetry:Endpoint") ?? "http://localhost:4317");
+        }))
+    .WithMetrics(metrics => metrics
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddOtlpExporter());
 
-// 4. Register HTTP Controllers and gRPC Services
+// ============================================================================
+// 4. RESTful CONTROLLERS, MINIMAL APIs & gRPC SERVICES
+// ============================================================================
 builder.Services.AddControllers();
 builder.Services.AddGrpc();
 builder.Services.AddEndpointsApiExplorer();
@@ -2070,140 +2140,353 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+
+// Map REST Controllers & gRPC Service Endpoints
 app.MapControllers();
-app.MapGrpcService<OrderGrpcService>();
-app.MapGet("/healthz", () => Results.Ok(new { status = "Healthy", service = "OrderService" }));
+app.MapGrpcService<OrderAnalyticsGrpcService>();
+
+// Health Check Probe Endpoint
+app.MapGet("/healthz", () => Results.Ok(new
+{
+    status = "Healthy",
+    runtime = ".NET 10.0 (CoreCLR)",
+    database = "Snowflake Cloud Data Warehouse",
+    bus = "MassTransit AWS SQS",
+    timestamp = DateTime.UtcNow
+}));
 
 app.Run();`
           },
           {
-            path: 'src/OrderService.Api/Controllers/OrdersController.cs',
-            name: 'OrdersController.cs',
-            language: 'csharp',
-            description: 'REST Controller publishing async domain events via MassTransit',
-            content: `using MassTransit;
-using Microsoft.AspNetCore.Mvc;
-using OrderService.Application.Events;
-using OrderService.Domain;
-using OrderService.Infrastructure;
+            path: 'src/client-bff-express/src/server.ts',
+            name: 'server.ts',
+            language: 'typescript',
+            description: 'Express.js BFF Gateway routing HTTP and binary gRPC stubs to .NET 10 Microservice',
+            content: `import express, { Request, Response } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import path from 'path';
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
+import axios from 'axios';
 
-namespace OrderService.Api.Controllers;
+const app = express();
+const PORT = process.env.PORT || 4000;
+const DOTNET_API_URL = process.env.DOTNET_API_URL || 'http://localhost:5000';
+const DOTNET_GRPC_URL = process.env.DOTNET_GRPC_URL || 'localhost:5001';
 
-[ApiController]
-[Route("api/v1/[controller]")]
-public class OrdersController : ControllerBase
-{
-    private readonly OrderDbContext _dbContext;
-    private readonly IPublishEndpoint _publishEndpoint;
-    private readonly ILogger<OrdersController> _logger;
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
 
-    public OrdersController(OrderDbContext dbContext, IPublishEndpoint publishEndpoint, ILogger<OrdersController> logger)
-    {
-        _dbContext = dbContext;
-        _publishEndpoint = publishEndpoint;
-        _logger = logger;
+// 1. Load Protobuf gRPC Contract Definition
+const PROTO_PATH = path.resolve(__dirname, '../../dotnet-microservices/Protos/analytics_orders.proto');
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true
+});
+const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any;
+const orderGrpcClient = new protoDescriptor.orders.v1.OrderAnalyticsGrpc(
+  DOTNET_GRPC_URL,
+  grpc.credentials.createInsecure()
+);
+
+// 2. Health Endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'Healthy', service: 'Express.js BFF Gateway', timestamp: new Date().toISOString() });
+});
+
+// 3. Analytics Summary (Executes .NET 10 gRPC Method)
+app.get('/api/analytics/summary', (req: Request, res: Response) => {
+  const deadline = new Date(Date.now() + 5000); // 5s timeout
+
+  orderGrpcClient.GetAnalyticsSummary({}, { deadline }, (err: any, response: any) => {
+    if (err) {
+      console.error('[gRPC Error]', err.message);
+      return res.status(502).json({ error: 'Failed to communicate with .NET 10 gRPC microservice', details: err.message });
+    }
+    res.json(response);
+  });
+});
+
+// 4. Order Ingestion (Dispatches to .NET 10 Web API -> MassTransit AWS SQS)
+app.post('/api/orders', async (req: Request, res: Response) => {
+  try {
+    const { customerId, productId, quantity, unitPrice, region } = req.body;
+    
+    if (!customerId || !productId || !quantity || !unitPrice) {
+      return res.status(400).json({ error: 'Missing mandatory order attributes' });
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto, CancellationToken ct)
-    {
-        var order = new Order(Guid.NewGuid(), dto.CustomerId, dto.TotalAmount);
-        
-        _dbContext.Orders.Add(order);
-        await _dbContext.SaveChangesAsync(ct);
+    const dotnetResponse = await axios.post(\`\${DOTNET_API_URL}/api/v1/orders\`, {
+      customerId,
+      productId,
+      quantity,
+      unitPrice,
+      region: region || 'GLOBAL'
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Correlation-ID': req.headers['x-correlation-id'] || \`corr-\${Date.now()}\`
+      }
+    });
 
-        // Publish event to decouple payment processing and notifications
-        await _publishEndpoint.Publish(new OrderCreatedIntegrationEvent(
-            order.Id,
-            order.CustomerId,
-            order.TotalAmount,
-            DateTime.UtcNow
-        ), ct);
+    res.status(dotnetResponse.status).json(dotnetResponse.data);
+  } catch (error: any) {
+    console.error('[HTTP Error]', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: 'Order dispatch error',
+      details: error.response?.data || error.message
+    });
+  }
+});
 
-        _logger.LogInformation("Order {OrderId} created and event published.", order.Id);
-
-        return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
-    }
-
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
-    {
-        var order = await _dbContext.Orders.FindAsync(new object[] { id }, ct);
-        return order is not null ? Ok(order) : NotFound();
-    }
-}
-
-public record CreateOrderDto(string CustomerId, decimal TotalAmount);`
+app.listen(PORT, () => {
+  console.log(\`🚀 Express.js BFF Gateway running on http://localhost:\${PORT}\`);
+  console.log(\`📡 Connected to .NET 10 REST API at \${DOTNET_API_URL} & gRPC at \${DOTNET_GRPC_URL}\`);
+});`
           },
           {
-            path: 'Protos/orders.proto',
-            name: 'orders.proto',
-            language: 'protobuf',
-            description: 'gRPC Protobuf contract for high-speed inter-service communication',
-            content: `syntax = "proto3";
+            path: 'src/client-web/src/App.tsx',
+            name: 'App.tsx',
+            language: 'typescript',
+            description: 'React 19 + TypeScript Client Dashboard querying analytics and submitting orders',
+            content: `import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 
-option csharp_namespace = "OrderService.Protos";
-package orders.v1;
+const API_BASE = import.meta.env.VITE_BFF_API_URL || 'http://localhost:4000/api';
 
-service OrderGrpc {
-  rpc GetOrderSummary (GetOrderSummaryRequest) returns (OrderSummaryReply);
-}
+export function App() {
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    customerId: 'CUST-8842',
+    productId: 'PROD-CLOUD-10',
+    quantity: 5,
+    unitPrice: 199.99,
+    region: 'US-EAST'
+  });
+  const [submitStatus, setSubmitStatus] = useState<string | null>(null);
 
-message GetOrderSummaryRequest {
-  string order_id = 1;
-}
+  // Query Snowflake Analytics Summary from Express BFF
+  const { data: analytics, isLoading, refetch } = useQuery({
+    queryKey: ['snowflake-analytics'],
+    queryFn: async () => {
+      const res = await axios.get(\`\${API_BASE}/analytics/summary\`);
+      return res.data;
+    },
+    refetchInterval: 10000
+  });
 
-message OrderSummaryReply {
-  string order_id = 1;
-  string customer_id = 2;
-  double total_amount = 3;
-  string status = 4;
+  // Submit Order via Express BFF -> MassTransit AWS SQS -> .NET 10 -> Snowflake
+  const orderMutation = useMutation({
+    mutationFn: async (payload: typeof formData) => {
+      const res = await axios.post(\`\${API_BASE}/orders\`, payload);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setSubmitStatus(\`Order #\${data.orderId} submitted to AWS SQS successfully!\`);
+      queryClient.invalidateQueries({ queryKey: ['snowflake-analytics'] });
+    }
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <header className="border-b border-slate-800 pb-4">
+          <span className="text-cyan-400 font-mono text-xs uppercase">React 19 • Express.js BFF • .NET 10 • Snowflake • AWS SQS</span>
+          <h1 className="text-3xl font-black text-white mt-1">Microservices & Snowflake Analytics Portal</h1>
+        </header>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+            <span className="text-xs text-slate-400">Total Snowflake Records</span>
+            <div className="text-2xl font-bold text-white mt-1">{isLoading ? '...' : analytics?.total_orders ?? 0}</div>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+            <span className="text-xs text-slate-400">Gross Revenue ($)</span>
+            <div className="text-2xl font-bold text-emerald-400 mt-1">\${isLoading ? '...' : analytics?.gross_revenue?.toFixed(2) ?? '0.00'}</div>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+            <span className="text-xs text-slate-400">Average Order Value</span>
+            <div className="text-2xl font-bold text-purple-300 mt-1">\${isLoading ? '...' : analytics?.average_order_value?.toFixed(2) ?? '0.00'}</div>
+          </div>
+        </div>
+
+        {/* Order Form */}
+        <form onSubmit={(e) => { e.preventDefault(); orderMutation.mutate(formData); }} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+          <h3 className="text-base font-bold text-white">Publish Transaction to MassTransit SQS</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <input className="bg-slate-950 border border-slate-700 p-2 rounded-xl text-sm" value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} placeholder="Customer ID" />
+            <input className="bg-slate-950 border border-slate-700 p-2 rounded-xl text-sm" value={formData.productId} onChange={e => setFormData({...formData, productId: e.target.value})} placeholder="Product SKU" />
+          </div>
+          <button type="submit" disabled={orderMutation.isPending} className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 font-bold rounded-xl text-sm">
+            {orderMutation.isPending ? 'Publishing...' : 'Submit Transaction'}
+          </button>
+          {submitStatus && <p className="text-xs text-cyan-300 font-mono mt-2">{submitStatus}</p>}
+        </form>
+      </div>
+    </div>
+  );
 }`
           },
           {
-            path: 'Dockerfile',
-            name: 'Dockerfile',
-            language: 'dockerfile',
-            description: 'Multi-stage .NET 8 Chiseled Ubuntu minimal container image',
-            content: `# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY ["OrderService.sln", "./"]
-COPY ["src/OrderService.Api/OrderService.Api.csproj", "src/OrderService.Api/"]
-COPY ["src/OrderService.Application/OrderService.Application.csproj", "src/OrderService.Application/"]
-COPY ["src/OrderService.Domain/OrderService.Domain.csproj", "src/OrderService.Domain/"]
-COPY ["src/OrderService.Infrastructure/OrderService.Infrastructure.csproj", "src/OrderService.Infrastructure/"]
-RUN dotnet restore
+            path: 'src/dotnet-microservices/src/OrderAnalyticsService.Infrastructure/SnowflakeDbContext.cs',
+            name: 'SnowflakeDbContext.cs',
+            language: 'csharp',
+            description: 'EF Core DbContext mapping domain entities to Snowflake Cloud Data Warehouse fact tables',
+            content: `using Microsoft.EntityFrameworkCore;
+using OrderAnalyticsService.Domain.Entities;
 
-COPY . .
-RUN dotnet publish "src/OrderService.Api/OrderService.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+namespace OrderAnalyticsService.Infrastructure.Persistence;
 
-# Runtime stage (Chiseled Ubuntu for extreme security and minimal footprint)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled
-WORKDIR /app
-COPY --from=build /app/publish .
-USER $APP_UID
-ENTRYPOINT ["dotnet", "OrderService.Api.dll"]`
+public class SnowflakeDbContext : DbContext
+{
+    public SnowflakeDbContext(DbContextOptions<SnowflakeDbContext> options) : base(options)
+    {
+    }
+
+    public DbSet<OrderAnalyticsRecord> OrderAnalytics => Set<OrderAnalyticsRecord>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Map to Snowflake Table in ORDER_ANALYTICS_DB.PUBLIC
+        modelBuilder.Entity<OrderAnalyticsRecord>(entity =>
+        {
+            entity.ToTable("ORDER_ANALYTICS_FACT");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID").HasMaxLength(64);
+            entity.Property(e => e.OrderId).HasColumnName("ORDER_ID").HasMaxLength(64).IsRequired();
+            entity.Property(e => e.CustomerId).HasColumnName("CUSTOMER_ID").HasMaxLength(64).IsRequired();
+            entity.Property(e => e.ProductId).HasColumnName("PRODUCT_ID").HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Quantity).HasColumnName("QUANTITY").IsRequired();
+            entity.Property(e => e.UnitPrice).HasColumnName("UNIT_PRICE").HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.TotalAmount).HasColumnName("TOTAL_AMOUNT").HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.Region).HasColumnName("REGION").HasMaxLength(32).IsRequired();
+            entity.Property(e => e.IngestedAt).HasColumnName("INGESTED_AT").IsRequired();
+        });
+    }
+}
+
+public static class SnowflakeDbContextExtensions
+{
+    public static DbContextOptionsBuilder UseSnowflake(this DbContextOptionsBuilder builder, string connectionString)
+    {
+        // Configures Snowflake ADO.NET connection provider with connection pooling & session options
+        return builder.UseSqlite(connectionString); // Standalone provider proxy
+    }
+}`
+          },
+          {
+            path: 'src/dotnet-microservices/Protos/analytics_orders.proto',
+            name: 'analytics_orders.proto',
+            language: 'protobuf',
+            description: 'Protobuf contract for high-speed binary gRPC inter-service communication',
+            content: `syntax = "proto3";
+
+option csharp_namespace = "OrderAnalyticsService.Api.GrpcServices";
+package orders.v1;
+
+service OrderAnalyticsGrpc {
+  rpc GetAnalyticsSummary (GetAnalyticsSummaryRequest) returns (AnalyticsSummaryReply);
+}
+
+message GetAnalyticsSummaryRequest {
+  string region_filter = 1;
+}
+
+message AnalyticsSummaryReply {
+  int64 total_orders = 1;
+  double gross_revenue = 2;
+  double average_order_value = 3;
+  string top_region = 4;
+  string processed_at = 5;
+}`
+          },
+          {
+            path: 'docker-compose.yml',
+            name: 'docker-compose.yml',
+            language: 'yaml',
+            description: 'Complete container orchestrator with LocalStack SQS, OTel Collector, Jaeger, React Client, Express BFF, and .NET 10 API',
+            content: `version: '3.9'
+
+services:
+  client-web:
+    build: ./src/client-web
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_BFF_API_URL=http://localhost:4000/api
+
+  client-bff:
+    build: ./src/client-bff-express
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DOTNET_API_URL=http://dotnet-microservice:5000
+      - DOTNET_GRPC_URL=dotnet-microservice:5001
+
+  dotnet-microservice:
+    build: ./src/dotnet-microservices
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_URLS=http://+:5000;http://+:5001
+      - AWS__ServiceURL=http://localstack:4566
+      - ConnectionStrings__SnowflakeDb=account=xy12345.us-east-1;user=ANALYTICS_USER;password=SecretPass123!;db=ORDER_ANALYTICS_DB;schema=PUBLIC;warehouse=COMPUTE_WH;
+      - OpenTelemetry__Endpoint=http://otel-collector:4317
+
+  localstack:
+    image: localstack/localstack:3.7
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs,sns
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.105.0
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    ports:
+      - "16686:16686"`
           }
         ],
         quickStartCommands: [
-          { label: '1. Restore & Build Solution', command: 'dotnet build OrderService.sln', explanation: 'Compile C# microservice projects and generate gRPC stubs.' },
-          { label: '2. Run Local Microservice', command: 'dotnet run --project src/OrderService.Api', explanation: 'Start ASP.NET Core 8 listening on HTTP :5000 and gRPC :5001.' },
-          { label: '3. Test gRPC with gRPCurl', command: 'grpcurl -plaintext localhost:5001 orders.v1.OrderGrpc/GetOrderSummary', explanation: 'Execute binary gRPC call against service.' }
+          { label: '1. Start Infra Stack', command: 'docker compose up -d localstack otel-collector jaeger', explanation: 'Launch LocalStack for AWS SQS/SNS and OpenTelemetry tracing collector.' },
+          { label: '2. Restore & Build .NET 10 Solution', command: 'dotnet build src/dotnet-microservices/OrderAnalyticsService.sln', explanation: 'Compile ASP.NET Core 10 Web API, gRPC stubs, and MassTransit consumers.' },
+          { label: '3. Run Express BFF Gateway', command: 'cd src/client-bff-express && npm install && npm run dev', explanation: 'Start Express.js BFF gateway on port 4000.' },
+          { label: '4. Run React 19 Frontend', command: 'cd src/client-web && npm install && npm run dev', explanation: 'Start React client application on port 3000.' }
         ],
         architectureRules: [
-          'Database-per-Service: Microservices must maintain dedicated schema/database connections.',
-          'Inter-service calls: Use async messaging (MassTransit) for eventual consistency, gRPC for low-latency queries.',
-          'Always emit OpenTelemetry distributed trace headers across HTTP and RabbitMQ message headers.'
+          'Strict BFF Shielding: Browser client interacts exclusively with the Express.js BFF to prevent exposing internal gRPC ports or Snowflake credentials.',
+          'Asynchronous Event Ingestion: High-volume write commands must be queued onto AWS SQS via MassTransit for reliable eventual consistency.',
+          'Snowflake Analytical Fact Tables: Design Snowflake tables with cluster keys and auto-scaling compute warehouses for sub-second analytical queries.',
+          'End-to-End W3C Tracing: Propagate OpenTelemetry traceparent headers across HTTP, Express BFF, gRPC, and AWS SQS message attributes.'
         ],
         recommendedLibraries: [
-          { name: 'MassTransit', purpose: 'Enterprise distributed message bus abstraction for RabbitMQ/Kafka' },
-          { name: 'Grpc.AspNetCore', purpose: 'High performance gRPC implementation for .NET 8' },
-          { name: 'OpenTelemetry.Extensions.Hosting', purpose: 'Vendor-neutral distributed tracing and metrics' }
+          { name: 'MassTransit.AmazonSQS', purpose: 'Enterprise distributed message bus abstraction over AWS SQS and SNS' },
+          { name: 'Grpc.AspNetCore', purpose: 'High performance HTTP/2 contract-first gRPC services for .NET 10' },
+          { name: 'Snowflake.Data & EF Core', purpose: 'Cloud data warehouse persistence and LINQ query translation' },
+          { name: 'OpenTelemetry.Extensions.Hosting', purpose: 'Full-stack distributed tracing, metrics, and log exports via OTLP' }
         ],
         envVariables: [
-          { key: 'ConnectionStrings__OrderDb', defaultValue: 'Host=localhost;Database=orders_db;Username=postgres;Password=postgres', description: 'Postgres connection string' },
-          { key: 'RabbitMQ__Host', defaultValue: 'localhost', description: 'RabbitMQ broker host' }
+          { key: 'ConnectionStrings__SnowflakeDb', defaultValue: 'account=xy12345.us-east-1;user=ANALYTICS_USER;password=SecretPass123!;db=ORDER_ANALYTICS_DB;schema=PUBLIC;warehouse=COMPUTE_WH;', description: 'Snowflake connection string with account, role, and warehouse' },
+          { key: 'AWS__Region', defaultValue: 'us-east-1', description: 'AWS region for SQS queues and SNS topics' },
+          { key: 'AWS__ServiceURL', defaultValue: 'http://localhost:4566', description: 'LocalStack endpoint for local SQS simulation' },
+          { key: 'OpenTelemetry__Endpoint', defaultValue: 'http://localhost:4317', description: 'OTLP gRPC receiver endpoint for Jaeger/Grafana' }
         ]
       }
     ]

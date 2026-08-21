@@ -94,6 +94,28 @@ export interface ArchitectureDecisionRecord {
   complianceNotes: string;
 }
 
+export interface CiCdPipelineTemplate {
+  id: string;
+  provider: 'GitHub Actions' | 'AWS CodePipeline' | 'GitLab CI' | 'Azure DevOps';
+  pipelineName: string;
+  fileName: string;
+  targetStack: string;
+  triggerEvent: string;
+  deploymentTarget: string;
+  yamlConfig: string;
+  keyStages: { name: string; description: string; durationEst: string }[];
+  securityAndQualityGates: string[];
+  environmentSecrets: { name: string; purpose: string }[];
+}
+
+export interface CiCdSpec {
+  strategy: string;
+  artifactRegistry: string;
+  deploymentModel: 'Blue/Green' | 'Canary' | 'Rolling Update' | 'Serverless Multi-Region';
+  rollbackMechanism: string;
+  pipelines: CiCdPipelineTemplate[];
+}
+
 export interface DeepDiveArchitectureSpec {
   dataFlowSteps: DataFlowStep[];
   concurrencyAndState: ConcurrencyAndStateModel;
@@ -102,6 +124,7 @@ export interface DeepDiveArchitectureSpec {
   scalabilityBottlenecks: ScaleBottleneck[];
   caseStudies: RealWorldCaseStudy[];
   adrSpecimen: ArchitectureDecisionRecord;
+  ciCdSpec?: CiCdSpec;
 }
 
 export interface ArchitectureData {
